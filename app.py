@@ -367,23 +367,23 @@ def find_heading_rect(page: fitz.Page, claim_no: int) -> fitz.Rect | None:
 
 def build_note_rect(page: fitz.Page, heading_rect: fitz.Rect) -> fitz.Rect:
     page_rect = page.rect
-    box_width = 150
-    box_height = 40
-    margin = 12
+    box_width = 84
+    box_height = 16
+    margin = 8
 
-    right_x0 = min(max(heading_rect.x1 + 8, page_rect.x0 + margin), page_rect.x1 - box_width - margin)
-    right_y0 = min(max(heading_rect.y0 - 2, page_rect.y0 + margin), page_rect.y1 - box_height - margin)
+    right_x0 = min(max(heading_rect.x1 + 6, page_rect.x0 + margin), page_rect.x1 - box_width - margin)
+    right_y0 = min(max(heading_rect.y0 + 1, page_rect.y0 + margin), page_rect.y1 - box_height - margin)
     right_rect = fitz.Rect(right_x0, right_y0, right_x0 + box_width, right_y0 + box_height)
 
-    if right_rect.x0 >= heading_rect.x1 + 6:
+    if right_rect.x0 >= heading_rect.x1 + 4:
         return right_rect
 
-    above_y0 = heading_rect.y0 - box_height - 6
+    above_y0 = heading_rect.y0 - box_height - 4
     if above_y0 >= page_rect.y0 + margin:
         x0 = min(max(heading_rect.x0, page_rect.x0 + margin), page_rect.x1 - box_width - margin)
         return fitz.Rect(x0, above_y0, x0 + box_width, above_y0 + box_height)
 
-    below_y0 = min(heading_rect.y1 + 6, page_rect.y1 - box_height - margin)
+    below_y0 = min(heading_rect.y1 + 4, page_rect.y1 - box_height - margin)
     x0 = min(max(heading_rect.x0, page_rect.x0 + margin), page_rect.x1 - box_width - margin)
     return fitz.Rect(x0, below_y0, x0 + box_width, below_y0 + box_height)
 
@@ -412,12 +412,11 @@ def annotate_spec_pdf(
         highlight = fitz.Rect(rect.x0 - 4, rect.y0 - 3, rect.x1 + 4, rect.y1 + 3)
         note_rect = build_note_rect(page, rect)
 
-        page.draw_rect(highlight, color=border, width=1.0)
-        page.draw_rect(note_rect, color=border, fill=fill, width=0.7)
+        page.draw_rect(highlight, color=border, width=0.9)
+        page.draw_rect(note_rect, color=border, width=0.8)
 
-        note_lines = [f"??? {entry.claim_no}: {entry.status}"]
-        if entry.short_reason:
-            note_lines.append(entry.short_reason)
+        short_status = "거절" if entry.status == "????" else "가능" if entry.status == "?? ??" else "검토"
+        note_text = f"청{entry.claim_no} {short_status}"
 
         if font_path is not None:
             page.insert_font(fontname="kfont", fontfile=str(font_path))
@@ -426,12 +425,12 @@ def annotate_spec_pdf(
             font_name = "helv"
 
         page.insert_textbox(
-            note_rect + (5, 5, -5, -5),
-            "\n".join(note_lines),
-            fontsize=5.8,
+            note_rect + (3, 2, -3, -2),
+            note_text,
+            fontsize=4.6,
             fontname=font_name,
             color=border,
-            align=0,
+            align=1,
         )
 
     output_pdf.parent.mkdir(parents=True, exist_ok=True)
