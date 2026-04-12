@@ -63,6 +63,38 @@ def find_pdf(base_dir: Path, keyword: str, exclude: str | None = None) -> Path:
     raise RuntimeError(f"'{keyword}'가 포함된 PDF가 여러 개입니다: {[p.name for p in matches]}")
 
 
+def find_spec_pdf(base_dir: Path, opinion_pdf: Path | None = None) -> Path:
+    matches: List[Path] = []
+    opinion_resolved = opinion_pdf.resolve() if opinion_pdf else None
+    for path in base_dir.iterdir():
+        if path.suffix.lower() != ".pdf":
+            continue
+        if opinion_resolved and path.resolve() == opinion_resolved:
+            continue
+        if "인용발명" in path.stem.replace(" ", ""):
+            continue
+        matches.append(path)
+
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:
+        raise FileNotFoundError("분석할 명세서 PDF를 찾지 못했습니다.")
+    raise RuntimeError(f"분석할 명세서 PDF가 여러 개입니다: {[p.name for p in matches]}")
+
+
+def make_unique_output_path(path: Path) -> Path:
+    if not path.exists():
+        return path
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    candidate = path.with_stem(f"{path.stem}_{timestamp}")
+    counter = 1
+    while candidate.exists():
+        candidate = path.with_stem(f"{path.stem}_{timestamp}_{counter}")
+        counter += 1
+    return candidate
+
+
 def read_pdf_text(pdf_path: Path) -> List[str]:
     doc = fitz.open(pdf_path)
     return [doc.load_page(index).get_text("text") for index in range(doc.page_count)]
@@ -70,33 +102,90 @@ def read_pdf_text(pdf_path: Path) -> List[str]:
 
 def expand_claim_range(raw_text: str) -> List[int]:
     values = [int(value) for value in re.findall(r"\d+", raw_text)]
-    if "내지" in raw_text and len(values) >= 2:
+    if ("내지" in raw_text or "-" in raw_text or "~" in raw_text) and len(values) >= 2:
         return list(range(values[0], values[1] + 1))
     return values
 
 
 def parse_claim_list(raw_text: str) -> List[int]:
     claims: List[int] = []
-    for part in raw_text.split(","):
+    normalized = re.sub(r"\s+", "", raw_text)
+    normalized = normalized.replace("청구항", "")
+    normalized = normalized.replace("제", "")
+    normalized = normalized.replace("항", "")
+    normalized = normalized.replace("내지", "-")
+    normalized = normalized.replace("부터", "-")
+    normalized = normalized.replace("~", "-")
+    normalized = normalized.replace("및", ",")
+    normalized = normalized.replace("와", ",")
+    normalized = normalized.replace("또는", ",")
+    for part in re.split(r"[,·]", normalized):
+        if not part:
+            continue
         claims.extend(expand_claim_range(part))
     return sorted(set(claims))
 
 
-def extract_status_lists(opinion_pages: List[str]) -> tuple[List[int], List[int]]:
-    combined = "\n".join(opinion_pages[:2])
-    rejected_match = re.search(
-        r"거절이유가 있는 부분\s*관련 법조항\s*1\s*청구항\s*(.+?)\s*특허법 제29조제2항",
-        combined,
-        flags=re.S,
+def parse_claim_text(raw_text: str, all_claim_numbers: Iterable[int] | None = None) -> List[int]:
+    if not raw_text:
+        return []
+
+    known_claims = sorted(set(all_claim_numbers or []))
+    compact = re.sub(r"\s+", "", raw_text)
+    if "전항" in compact:
+        return known_claims
+
+    matches = re.findall(
+        r"청구항([^[]+?)(?=청구항|관련법조항|구체적인거절이유|특허가능한청구항|$)",
+        compact,
     )
-    allowed_match = re.search(r"특허\s+가능한\s+청구항\s*:\s*제(.+?)항", combined, flags=re.S)
-    if not rejected_match or not allowed_match:
+    if matches:
+        claims: List[int] = []
+        for match in matches:
+            claims.extend(parse_claim_list(match))
+        return sorted(set(claims))
+
+    return parse_claim_list(compact)
+
+
+def extract_status_lists(
+    opinion_pages: List[str],
+    all_claim_numbers: Iterable[int] | None = None,
+) -> tuple[List[int], List[int]]:
+    combined = "\n".join(opinion_pages[:3])
+    compact = re.sub(r"\s+", "", combined)
+    known_claims = sorted(set(all_claim_numbers or []))
+
+    rejected_text = ""
+    for pattern in (
+        r"\[심사결과\].*?거절이유가있는부분관련법조항\d+(청구항.+?)특허법제\d+조제\d+항",
+        r"거절이유가있는부분관련법조항\d+(청구항.+?)특허법제\d+조제\d+항",
+    ):
+        rejected_match = re.search(pattern, compact)
+        if rejected_match:
+            rejected_text = rejected_match.group(1)
+            break
+
+    allowed_text = ""
+    allowed_match = re.search(
+        r"특허가능한청구항[:：]?(.*?)(?:※|\[구체적인거절이유\]|구체적인거절이유)",
+        compact,
+    )
+    if allowed_match:
+        allowed_text = allowed_match.group(1)
+
+    rejected_claims = parse_claim_text(rejected_text, known_claims)
+    allowed_claims = parse_claim_text(allowed_text, known_claims)
+
+    if not rejected_claims and allowed_claims and known_claims:
+        rejected_claims = sorted(set(known_claims) - set(allowed_claims))
+    if not allowed_claims and rejected_claims and known_claims:
+        allowed_claims = sorted(set(known_claims) - set(rejected_claims))
+
+    if not rejected_claims and not allowed_claims:
         raise RuntimeError("의견제출통지서에서 청구항 상태를 파싱하지 못했습니다.")
 
-    rejected_text = rejected_match.group(1).replace("제", "")
-    rejected_text = re.sub(r"\s+", " ", rejected_text).replace("항", "")
-    allowed_text = allowed_match.group(1)
-    return parse_claim_list(rejected_text), parse_claim_list(allowed_text)
+    return rejected_claims, allowed_claims
 
 
 def clean_text_block(text: str) -> str:
@@ -250,35 +339,36 @@ def summarize_reason(block: str, claim_numbers: List[int]) -> tuple[str, List[in
     return summary, cited_inventions
 
 
-def extract_claim_reasons(opinion_pages: List[str]) -> Dict[int, ClaimReason]:
-    body = "\n".join(opinion_pages[1:6])
+def extract_claim_reasons(
+    opinion_pages: List[str],
+    all_claim_numbers: Iterable[int] | None = None,
+) -> Dict[int, ClaimReason]:
+    body = "\n".join(opinion_pages[1:])
+    body = body.split("<< 안내 >>", 1)[0]
     raw_lines = body.splitlines()
     lines: List[str] = []
     for line in raw_lines:
         stripped = line.strip()
         if not stripped:
             continue
-        if re.fullmatch(r"10-2024-0124870", stripped):
+        if re.fullmatch(r"10-\d{4}-\d+", stripped):
             continue
-        if re.fullmatch(r"\d/7", stripped):
+        if re.fullmatch(r"\d+/\d+", stripped):
             continue
         if re.match(r"첨부\d", stripped):
             continue
-        if stripped == "[첨 부]":
-            continue
+        if stripped in {"[첨 부]", "[첨부]"}:
+            break
         lines.append(stripped)
 
     results: Dict[int, ClaimReason] = {}
     current_block: List[str] = []
+    current_claims: List[int] = []
 
-    def flush_block(block_lines: List[str]) -> None:
-        if not block_lines:
+    def flush_block(block_lines: List[str], claim_numbers: List[int]) -> None:
+        if not block_lines or not claim_numbers:
             return
         heading_line = re.sub(r"^1-\d+\.\s*", "", block_lines[0]).strip()
-        normalized_heading = re.sub(r"\([^)]*\)", "", heading_line)
-        claim_numbers = [int(value) for value in re.findall(r"제(\d+)항", normalized_heading)]
-        if not claim_numbers:
-            return
         content = "\n".join(block_lines[1:])
         full_text = clean_text_block(f"{heading_line}\n{content}")
         summary, cited_inventions = summarize_reason(full_text, claim_numbers)
@@ -294,25 +384,57 @@ def extract_claim_reasons(opinion_pages: List[str]) -> Dict[int, ClaimReason]:
 
     for line in lines:
         if line.startswith("[보정에 관한 참고사항]"):
-            flush_block(current_block)
+            flush_block(current_block, current_claims)
             break
         if re.match(r"^1-\d+\.\s*청구항", line):
-            flush_block(current_block)
+            flush_block(current_block, current_claims)
             current_block = [line]
+            current_claims = parse_claim_text(line, all_claim_numbers)
+            continue
+        if re.match(r"^제\s*\d+\s*항\s*발명은", line):
+            flush_block(current_block, current_claims)
+            current_block = [line]
+            current_claims = parse_claim_text(line, all_claim_numbers)
             continue
         if current_block:
             current_block.append(line)
 
-    flush_block(current_block)
+    flush_block(current_block, current_claims)
+
+    if results:
+        return results
+
+    generic_lines: List[str] = []
+    capture = False
+    for line in lines:
+        if "구체적인 거절이유" in line:
+            capture = True
+            continue
+        if capture:
+            generic_lines.append(line)
+
+    generic_text = clean_text_block("\n".join(generic_lines or lines))
+    fallback_claims = sorted(set(all_claim_numbers or []))
+    if generic_text and fallback_claims:
+        summary, cited_inventions = summarize_reason(generic_text, fallback_claims)
+        reason = ClaimReason(
+            claims=fallback_claims,
+            heading="구체적인 거절이유",
+            summary=summary,
+            full_text=generic_text,
+            cited_inventions=cited_inventions,
+        )
+        for claim_number in fallback_claims:
+            results[claim_number] = reason
+
     return results
 
 
 def extract_claim_texts(spec_pdf: Path) -> Dict[int, ClaimEntry]:
     doc = fitz.open(spec_pdf)
-    claim_pages = range(18, min(doc.page_count, 23))
     records: Dict[int, ClaimEntry] = {}
 
-    for page_index in claim_pages:
+    for page_index in range(doc.page_count):
         text = doc.load_page(page_index).get_text("text")
         matches = list(re.finditer(r"【청구항\s*(\d+)】", text))
         for idx, match in enumerate(matches):
@@ -329,8 +451,8 @@ def extract_claim_texts(spec_pdf: Path) -> Dict[int, ClaimEntry]:
                 cited_inventions=[],
             )
 
-    if len(records) != 18:
-        raise RuntimeError(f"배터리케이스 PDF에서 청구항을 모두 찾지 못했습니다. 현재: {sorted(records)}")
+    if not records:
+        raise RuntimeError(f"{spec_pdf.name}에서 청구항을 찾지 못했습니다.")
     return records
 
 
@@ -358,7 +480,12 @@ def decorate_claims(
 
 
 def find_heading_rect(page: fitz.Page, claim_no: int) -> fitz.Rect | None:
-    for candidate in (f"【청구항 {claim_no}】", f"청구항 {claim_no}"):
+    for candidate in (
+        f"【청구항 {claim_no}】",
+        f"청구항 {claim_no}",
+        f"청구항{claim_no}",
+        f"제{claim_no}항",
+    ):
         matches = page.search_for(candidate)
         if matches:
             return matches[0]
@@ -367,23 +494,27 @@ def find_heading_rect(page: fitz.Page, claim_no: int) -> fitz.Rect | None:
 
 def build_note_rect(page: fitz.Page, heading_rect: fitz.Rect) -> fitz.Rect:
     page_rect = page.rect
-    box_width = 84
-    box_height = 16
+    box_width = 128
+    box_height = 30
     margin = 8
 
     right_x0 = min(max(heading_rect.x1 + 6, page_rect.x0 + margin), page_rect.x1 - box_width - margin)
-    right_y0 = min(max(heading_rect.y0 + 1, page_rect.y0 + margin), page_rect.y1 - box_height - margin)
+    heading_center_y = (heading_rect.y0 + heading_rect.y1) / 2
+    right_y0 = min(
+        max(heading_center_y - (box_height / 2), page_rect.y0 + margin),
+        page_rect.y1 - box_height - margin,
+    )
     right_rect = fitz.Rect(right_x0, right_y0, right_x0 + box_width, right_y0 + box_height)
 
     if right_rect.x0 >= heading_rect.x1 + 4:
         return right_rect
 
-    above_y0 = heading_rect.y0 - box_height - 4
+    above_y0 = heading_rect.y0 - box_height - 6
     if above_y0 >= page_rect.y0 + margin:
         x0 = min(max(heading_rect.x0, page_rect.x0 + margin), page_rect.x1 - box_width - margin)
         return fitz.Rect(x0, above_y0, x0 + box_width, above_y0 + box_height)
 
-    below_y0 = min(heading_rect.y1 + 4, page_rect.y1 - box_height - margin)
+    below_y0 = min(heading_rect.y1 + 6, page_rect.y1 - box_height - margin)
     x0 = min(max(heading_rect.x0, page_rect.x0 + margin), page_rect.x1 - box_width - margin)
     return fitz.Rect(x0, below_y0, x0 + box_width, below_y0 + box_height)
 
@@ -394,6 +525,7 @@ def annotate_spec_pdf(
     claim_entries: Dict[int, ClaimEntry],
 ) -> Path:
     doc = fitz.open(source_pdf)
+    save_path = make_unique_output_path(output_pdf)
     font_path = next((path for path in KOREAN_FONT_CANDIDATES if path.exists()), None)
 
     for entry in claim_entries.values():
@@ -402,9 +534,9 @@ def annotate_spec_pdf(
         if rect is None:
             continue
 
-        if entry.status == "????":
+        if entry.status == "거절이유":
             border, fill = REJECTED_COLOR, REJECTED_FILL
-        elif entry.status == "?? ??":
+        elif entry.status == "특허 가능":
             border, fill = ALLOWED_COLOR, ALLOWED_FILL
         else:
             border, fill = NEUTRAL_COLOR, NEUTRAL_FILL
@@ -412,11 +544,16 @@ def annotate_spec_pdf(
         highlight = fitz.Rect(rect.x0 - 4, rect.y0 - 3, rect.x1 + 4, rect.y1 + 3)
         note_rect = build_note_rect(page, rect)
 
-        page.draw_rect(highlight, color=border, width=0.9)
-        page.draw_rect(note_rect, color=border, width=0.8)
+        page.draw_rect(highlight, color=border, width=1.0)
+        page.draw_rect(note_rect, color=border, fill=fill, width=0.8)
 
-        short_status = "거절" if entry.status == "????" else "가능" if entry.status == "?? ??" else "검토"
-        note_text = f"청{entry.claim_no} {short_status}"
+        short_reason = re.sub(r"\s+", " ", entry.short_reason).strip()
+        if len(short_reason) > 22:
+            short_reason = short_reason[:22].rstrip() + "..."
+
+        note_lines = [f"청구항 {entry.claim_no}: {entry.status}"]
+        if short_reason:
+            note_lines.append(short_reason)
 
         if font_path is not None:
             page.insert_font(fontname="kfont", fontfile=str(font_path))
@@ -425,27 +562,27 @@ def annotate_spec_pdf(
             font_name = "helv"
 
         page.insert_textbox(
-            note_rect + (3, 2, -3, -2),
-            note_text,
-            fontsize=4.6,
+            note_rect + (4, 3, -4, -3),
+            "\n".join(note_lines),
+            fontsize=5.3,
             fontname=font_name,
             color=border,
-            align=1,
+            align=0,
         )
 
     output_pdf.parent.mkdir(parents=True, exist_ok=True)
     try:
-        doc.save(output_pdf)
-        return output_pdf
+        doc.save(save_path)
+        return save_path
     except fitz.FileDataError:
         raise
     except Exception as exc:
         if "Permission denied" not in str(exc):
             raise
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        fallback = output_pdf.with_stem(f"{output_pdf.stem}_{timestamp}")
+        fallback = make_unique_output_path(output_pdf)
         doc.save(fallback)
         return fallback
+
 def build_html_report(
     output_path: Path,
     source_spec_pdf: Path,
@@ -547,7 +684,7 @@ def build_html_report(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>동희산업 배터리케이스 청구항 표시 결과</title>
+  <title>청구항 분석 결과</title>
   <style>
     :root {{
       --bg: #f5f7ff;
@@ -1050,13 +1187,13 @@ def build_html_report(
   <header class="topbar">
     <div class="brand">
       <span class="brand-badge">▣</span>
-      <span>Claim Dashboard</span>
+      <span>Claim Analysis</span>
     </div>
     <div class="searchbar">
-      <input value="배터리 케이스 청구항 분석 현황" readonly>
+      <input value="청구항 분석 현황" readonly>
       <div class="search-action">⌕</div>
     </div>
-    <div class="badge allowed">동희산업</div>
+    <div class="badge allowed">청구항 분석</div>
   </header>
 
   <div class="layout">
@@ -1077,10 +1214,10 @@ def build_html_report(
     <main>
       <section class="hero">
         <div>
-          <h1>동희산업 배터리케이스 청구항 분석 대시보드</h1>
+          <h1>청구항 분석 대시보드</h1>
           <p>의견제출통지서의 거절이유를 기준으로 명세서 청구항을 한 화면에서 관리할 수 있도록 요약 위젯, 상태표, 청구항 상세 카드로 재구성했습니다.</p>
           <div class="links">
-            <a href="{html.escape(annotated_href)}">표시된 PDF 열기</a>
+            <a href="{html.escape(annotated_href)}">분석 PDF 열기</a>
             <a href="{html.escape(spec_href)}">명세서 PDF</a>
             <a href="{html.escape(opinion_href)}">의견제출 PDF</a>
             {"".join(f'<a href="{html.escape(href)}">인용발명 {number} PDF</a>' for number, href, _ in cited_links)}
@@ -1200,14 +1337,15 @@ def process_pdfs(
     spec_pdf = spec_pdf.resolve()
     output_dir = output_dir.resolve()
 
-    opinion_pages = read_pdf_text(opinion_pdf)
-    rejected_claims, allowed_claims = extract_status_lists(opinion_pages)
-    reasons_by_claim = extract_claim_reasons(opinion_pages)
     claim_entries = extract_claim_texts(spec_pdf)
+    opinion_pages = read_pdf_text(opinion_pdf)
+    all_claim_numbers = sorted(claim_entries)
+    rejected_claims, allowed_claims = extract_status_lists(opinion_pages, all_claim_numbers)
+    reasons_by_claim = extract_claim_reasons(opinion_pages, all_claim_numbers)
     decorate_claims(claim_entries, rejected_claims, allowed_claims, reasons_by_claim)
     cited_pdf_map = enrich_with_cited_inventions(claim_entries, cited_pdf_map)
 
-    annotated_pdf = output_dir / "동희산업_배터리케이스_청구항표시.pdf"
+    annotated_pdf = output_dir / "청구항_분석_결과.pdf"
     html_report = output_dir / "result.html"
     json_report = output_dir / "claim_mapping.json"
 
@@ -1233,7 +1371,7 @@ def process_pdfs(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="의견제출통지서의 거절이유를 배터리케이스 PDF 청구항에 표시합니다."
+        description="의견제출통지서의 거절이유를 명세서 PDF 청구항에 분석 결과로 반영합니다."
     )
     parser.add_argument("--base-dir", default=".", help="PDF가 있는 작업 폴더")
     parser.add_argument("--output-dir", default="output", help="결과 저장 폴더")
@@ -1248,18 +1386,18 @@ def main() -> None:
     output_dir = (base_dir / args.output_dir).resolve()
 
     opinion_pdf = Path(args.opinion_pdf).resolve() if args.opinion_pdf else find_pdf(base_dir, "의견제출")
-    spec_pdf = Path(args.spec_pdf).resolve() if args.spec_pdf else find_pdf(base_dir, "배터리케이스", exclude="의견제출")
+    spec_pdf = Path(args.spec_pdf).resolve() if args.spec_pdf else find_spec_pdf(base_dir, opinion_pdf)
     result = process_pdfs(opinion_pdf, spec_pdf, output_dir)
 
     print("생성 완료")
-    print(f"- 표시된 PDF: {result['annotated_pdf']}")
+    print(f"- 분석 PDF: {result['annotated_pdf']}")
     print(f"- HTML 보고서: {result['html_report']}")
     print(f"- JSON 데이터: {result['json_report']}")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="의견제출통지서의 거절이유를 배터리케이스 PDF 청구항에 표시합니다."
+        description="의견제출통지서의 거절이유를 명세서 PDF 청구항에 분석 결과로 반영합니다."
     )
     parser.add_argument("--base-dir", default=".", help="PDF가 있는 작업 폴더")
     parser.add_argument("--output-dir", default="output", help="결과 저장 폴더")
@@ -1277,7 +1415,7 @@ def main() -> None:
     output_dir = (base_dir / args.output_dir).resolve()
 
     opinion_pdf = Path(args.opinion_pdf).resolve() if args.opinion_pdf else find_pdf(base_dir, "의견제출")
-    spec_pdf = Path(args.spec_pdf).resolve() if args.spec_pdf else find_pdf(base_dir, "배터리케이스", exclude="의견제출")
+    spec_pdf = Path(args.spec_pdf).resolve() if args.spec_pdf else find_spec_pdf(base_dir, opinion_pdf)
     cited_pdf_map = {
         1: Path(args.cited1_pdf).resolve() if args.cited1_pdf else None,
         2: Path(args.cited2_pdf).resolve() if args.cited2_pdf else None,
@@ -1286,7 +1424,7 @@ def main() -> None:
     result = process_pdfs(opinion_pdf, spec_pdf, output_dir, cited_pdf_map)
 
     print("생성 완료")
-    print(f"- 표시된 PDF: {result['annotated_pdf']}")
+    print(f"- 분석 PDF: {result['annotated_pdf']}")
     print(f"- HTML 보고서: {result['html_report']}")
     print(f"- JSON 데이터: {result['json_report']}")
 

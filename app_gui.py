@@ -15,18 +15,16 @@ BASE_DIR = Path(__file__).resolve().parent
 class ClaimMarkerApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("동희산업 청구항 표시 프로그램")
-        self.root.geometry("860x760")
-        self.root.minsize(820, 700)
+        self.root.title("청구항 분석 프로그램")
+        self.root.geometry("860x720")
+        self.root.minsize(760, 560)
 
         self.opinion_path = tk.StringVar()
         self.spec_path = tk.StringVar()
         self.cited1_path = tk.StringVar()
         self.cited2_path = tk.StringVar()
         self.cited3_path = tk.StringVar()
-        self.status_text = tk.StringVar(
-            value="의견제출 PDF, 명세서 PDF, 필요하면 인용발명 1~3 PDF도 올린 뒤 실행하세요."
-        )
+        self.status_text = tk.StringVar(value="파일을 선택한 뒤 실행하세요.")
 
         self._load_defaults()
         self._build_ui()
@@ -35,51 +33,73 @@ class ClaimMarkerApp:
         for path in BASE_DIR.iterdir():
             if path.suffix.lower() != ".pdf":
                 continue
+            compact_name = path.stem.replace(" ", "")
             if "의견제출" in path.name and not self.opinion_path.get():
                 self.opinion_path.set(str(path))
-            elif "배터리케이스" in path.name and "의견제출" not in path.name and not self.spec_path.get():
+            elif "의견제출" not in path.name and "인용발명" not in compact_name and not self.spec_path.get():
                 self.spec_path.set(str(path))
-            elif "인용발명1" in path.stem.replace(" ", "") and not self.cited1_path.get():
+            elif "인용발명1" in compact_name and not self.cited1_path.get():
                 self.cited1_path.set(str(path))
-            elif "인용발명2" in path.stem.replace(" ", "") and not self.cited2_path.get():
+            elif "인용발명2" in compact_name and not self.cited2_path.get():
                 self.cited2_path.set(str(path))
-            elif "인용발명3" in path.stem.replace(" ", "") and not self.cited3_path.get():
+            elif "인용발명3" in compact_name and not self.cited3_path.get():
                 self.cited3_path.set(str(path))
 
     def _build_ui(self) -> None:
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure("Root.TFrame", background="#eff9eb")
-        style.configure("Panel.TFrame", background="#fbfff8")
-        style.configure("Title.TLabel", background="#eff9eb", foreground="#244028", font=("Malgun Gothic", 19, "bold"))
-        style.configure("Body.TLabel", background="#fbfff8", foreground="#45604a", font=("Malgun Gothic", 10))
-        style.configure("Path.TEntry", fieldbackground="#ffffff", padding=8)
+        style.configure("Root.TFrame", background="#eef6e8")
+        style.configure("Card.TFrame", background="#fbfff8")
+        style.configure("Title.TLabel", background="#eef6e8", foreground="#243b22", font=("Malgun Gothic", 18, "bold"))
+        style.configure("Body.TLabel", background="#fbfff8", foreground="#45604a", font=("Malgun Gothic", 9))
+        style.configure("Path.TEntry", fieldbackground="#ffffff", padding=7)
 
-        root_frame = ttk.Frame(self.root, padding=20, style="Root.TFrame")
-        root_frame.pack(fill="both", expand=True)
+        outer = ttk.Frame(self.root, padding=16, style="Root.TFrame")
+        outer.pack(fill="both", expand=True)
 
-        ttk.Label(root_frame, text="동희산업 청구항 표시 프로그램", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(outer, text="청구항 분석 프로그램", style="Title.TLabel").pack(anchor="w")
 
-        hero = ttk.Frame(root_frame, padding=18, style="Panel.TFrame")
-        hero.pack(fill="x", pady=(14, 16))
+        top_note = ttk.Frame(outer, padding=(14, 10), style="Card.TFrame")
+        top_note.pack(fill="x", pady=(10, 12))
         ttk.Label(
-            hero,
-            text="의견제출통지서의 거절이유를 명세서 PDF 청구항에 표시하고, 인용발명 PDF를 추가로 열어 관련 문단과 차이 키워드를 HTML에 함께 정리합니다.",
+            top_note,
+            text="의견제출서와 명세서, 필요한 인용발명 PDF를 넣으면 PDF/HTML/JSON을 생성합니다.",
             style="Body.TLabel",
             wraplength=760,
             justify="left",
         ).pack(anchor="w")
 
-        self._build_picker(root_frame, "의견제출 PDF", self.opinion_path, self.select_opinion_pdf)
-        self._build_picker(root_frame, "명세서 PDF", self.spec_path, self.select_spec_pdf)
-        self._build_picker(root_frame, "인용발명 1 PDF", self.cited1_path, self.select_cited1_pdf)
-        self._build_picker(root_frame, "인용발명 2 PDF", self.cited2_path, self.select_cited2_pdf)
-        self._build_picker(root_frame, "인용발명 3 PDF", self.cited3_path, self.select_cited3_pdf)
+        container = ttk.Frame(outer, style="Root.TFrame")
+        container.pack(fill="both", expand=True)
 
-        button_row = ttk.Frame(root_frame, style="Root.TFrame")
-        button_row.pack(fill="x", pady=(4, 14))
+        canvas = tk.Canvas(container, background="#eef6e8", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        self.form_frame = ttk.Frame(canvas, style="Root.TFrame")
 
-        run_button = tk.Button(
+        self.form_frame.bind(
+            "<Configure>",
+            lambda event: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
+
+        canvas.create_window((0, 0), window=self.form_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        canvas.bind_all("<MouseWheel>", lambda event: canvas.yview_scroll(int(-event.delta / 120), "units"))
+        canvas.bind("<Configure>", lambda event: canvas.itemconfigure(1, width=event.width))
+
+        self._build_picker(self.form_frame, "의견제출 PDF", self.opinion_path, self.select_opinion_pdf)
+        self._build_picker(self.form_frame, "명세서 PDF", self.spec_path, self.select_spec_pdf)
+        self._build_picker(self.form_frame, "인용발명 1 PDF", self.cited1_path, self.select_cited1_pdf)
+        self._build_picker(self.form_frame, "인용발명 2 PDF", self.cited2_path, self.select_cited2_pdf)
+        self._build_picker(self.form_frame, "인용발명 3 PDF", self.cited3_path, self.select_cited3_pdf)
+
+        button_row = ttk.Frame(self.form_frame, style="Root.TFrame")
+        button_row.pack(fill="x", pady=(6, 12))
+
+        tk.Button(
             button_row,
             text="실행",
             command=self.run,
@@ -89,13 +109,12 @@ class ClaimMarkerApp:
             activebackground="#5f9f57",
             activeforeground="white",
             relief="flat",
-            padx=24,
-            pady=10,
+            padx=22,
+            pady=9,
             cursor="hand2",
-        )
-        run_button.pack(side="left")
+        ).pack(side="left")
 
-        open_button = tk.Button(
+        tk.Button(
             button_row,
             text="결과 폴더 열기",
             command=self.open_output_folder,
@@ -105,13 +124,12 @@ class ClaimMarkerApp:
             activebackground="#cfe8c8",
             activeforeground="#35523a",
             relief="flat",
-            padx=20,
-            pady=10,
+            padx=18,
+            pady=9,
             cursor="hand2",
-        )
-        open_button.pack(side="left", padx=10)
+        ).pack(side="left", padx=10)
 
-        done_button = tk.Button(
+        tk.Button(
             button_row,
             text="종료",
             command=self.root.destroy,
@@ -121,24 +139,22 @@ class ClaimMarkerApp:
             activebackground="#cfe8c8",
             activeforeground="#35523a",
             relief="flat",
-            padx=20,
-            pady=10,
+            padx=18,
+            pady=9,
             cursor="hand2",
-        )
-        done_button.pack(side="right")
+        ).pack(side="right")
 
-        info = ttk.Frame(root_frame, padding=18, style="Panel.TFrame")
-        info.pack(fill="x", pady=(0, 8))
+        info = ttk.Frame(self.form_frame, padding=14, style="Card.TFrame")
+        info.pack(fill="x", pady=(0, 10))
         ttk.Label(info, textvariable=self.status_text, style="Body.TLabel", wraplength=760, justify="left").pack(anchor="w")
 
     def _build_picker(self, parent: ttk.Frame, title: str, variable: tk.StringVar, command) -> None:
-        panel = ttk.Frame(parent, padding=18, style="Panel.TFrame")
-        panel.pack(fill="x", pady=(0, 14))
+        panel = ttk.Frame(parent, padding=14, style="Card.TFrame")
+        panel.pack(fill="x", pady=(0, 10))
 
         ttk.Label(panel, text=title, style="Body.TLabel").pack(anchor="w")
-
-        row = ttk.Frame(panel, style="Panel.TFrame")
-        row.pack(fill="x", pady=(10, 0))
+        row = ttk.Frame(panel, style="Card.TFrame")
+        row.pack(fill="x", pady=(8, 0))
         ttk.Entry(row, textvariable=variable, style="Path.TEntry").pack(side="left", fill="x", expand=True)
         ttk.Button(row, text="파일 선택", command=command).pack(side="left", padx=(10, 0))
 
@@ -196,7 +212,7 @@ class ClaimMarkerApp:
                 return
 
         try:
-            self.status_text.set("인용발명 PDF까지 포함해 비교 중입니다. 잠시만 기다려 주세요...")
+            self.status_text.set("파일을 분석하고 결과를 만드는 중입니다...")
             self.root.update_idletasks()
             result = process_pdfs(opinion, spec, BASE_DIR / "output", cited_pdf_map)
         except Exception as exc:
@@ -207,14 +223,11 @@ class ClaimMarkerApp:
         uploaded_cited = [str(number) for number, path in cited_pdf_map.items() if path]
         self.status_text.set(
             "완료되었습니다.\n"
-            f"표시된 PDF: {result['annotated_pdf'].name}\n"
+            f"분석 PDF: {result['annotated_pdf'].name}\n"
             f"HTML 보고서: {result['html_report'].name}\n"
             f"업로드한 인용발명: {', '.join(uploaded_cited) if uploaded_cited else '없음'}"
         )
-        messagebox.showinfo(
-            "완료",
-            "결과 파일 생성이 완료되었습니다.\noutput 폴더를 바로 열어 드립니다.",
-        )
+        messagebox.showinfo("완료", "결과 파일 생성이 완료되었습니다.")
         self.open_output_folder()
 
     def open_output_folder(self) -> None:
@@ -232,7 +245,7 @@ class ClaimMarkerApp:
 def main() -> None:
     root = tk.Tk()
     ClaimMarkerApp(root)
-    root.configure(bg="#eff9eb")
+    root.configure(bg="#eef6e8")
     root.mainloop()
 
 

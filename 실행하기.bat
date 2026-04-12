@@ -18,7 +18,7 @@ if not defined PY_CMD (
   exit /b 1
 )
 
-echo Running claim annotation program...
+echo Running claim analysis program...
 %PY_CMD% app_gui.py > output\run.log 2>&1
 if errorlevel 1 (
   echo.
