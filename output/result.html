@@ -1,0 +1,1669 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>동희산업 배터리케이스 청구항 표시 결과</title>
+  <style>
+    :root {
+      --bg: #f5f7ff;
+      --panel: #ffffff;
+      --ink: #28304a;
+      --muted: #7b84a3;
+      --line: #e8ebf7;
+      --accent: #6d7cff;
+      --accent-soft: #eef1ff;
+      --accent-deep: #4d5de0;
+      --reject: #ff8b6b;
+      --reject-bg: #fff2ed;
+      --allow: #23b98f;
+      --allow-bg: #ebfff8;
+      --shadow: 0 18px 40px rgba(102, 118, 191, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, #eef2ff 0%, #f8f9ff 180px, var(--bg) 100%);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      color: var(--ink);
+    }
+    a { color: inherit; }
+    .topbar {
+      height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.45);
+      position: sticky;
+      top: 0;
+      background: rgba(245, 247, 255, 0.86);
+      backdrop-filter: blur(16px);
+      z-index: 10;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 800;
+      font-size: 22px;
+    }
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #8ea0ff);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      box-shadow: 0 12px 24px rgba(109, 124, 255, 0.35);
+    }
+    .searchbar {
+      width: min(560px, 45vw);
+      display: flex;
+      align-items: center;
+      border: 1px solid #dfe4ff;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 8px 24px rgba(134, 147, 206, 0.12);
+    }
+    .searchbar input {
+      width: 100%;
+      border: 0;
+      padding: 14px 18px;
+      font-size: 15px;
+      outline: none;
+      color: #6b7391;
+      background: transparent;
+    }
+    .search-action {
+      width: 62px;
+      height: 50px;
+      border-left: 1px solid #e5e9ff;
+      background: #f7f8ff;
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 210px minmax(0, 1fr);
+      gap: 28px;
+      padding: 24px;
+    }
+    aside {
+      position: sticky;
+      top: 98px;
+      align-self: start;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(255,255,255,0.8);
+      box-shadow: var(--shadow);
+      border-radius: 26px;
+      padding: 20px 14px;
+      backdrop-filter: blur(12px);
+    }
+    .side-group {
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+    .side-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0 0 10px;
+      padding: 0 12px;
+    }
+    .nav-item {
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .nav-item:hover {
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+    }
+    .nav-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+    main {
+      display: grid;
+      gap: 18px;
+    }
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      padding: 8px 6px 10px;
+    }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 760px;
+    }
+    .links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .links a {
+      text-decoration: none;
+      background: var(--panel);
+      color: var(--accent-deep);
+      border: 1px solid #dde3ff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      box-shadow: 0 8px 18px rgba(121, 135, 200, 0.1);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .hero-side {
+      min-width: 280px;
+      background: linear-gradient(180deg, #ffffff, #f9faff);
+      border-radius: 24px;
+      padding: 16px;
+      border: 1px solid #edf0ff;
+      box-shadow: var(--shadow);
+    }
+    .hero-side h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+    .hero-side p {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .chips {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 0 4px 8px;
+    }
+    .chip {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #ffffff;
+      border: 1px solid #e7ebff;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .chip.active {
+      background: linear-gradient(135deg, var(--accent), #8ea0ff);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 12px 24px rgba(109, 124, 255, 0.28);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .stat {
+      background: linear-gradient(180deg, #ffffff, #f9faff);
+      border: 1px solid #edf0ff;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .stat h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .stat p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 18px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge.rejected { color: var(--reject); background: var(--reject-bg); }
+    .badge.allowed { color: var(--allow); background: var(--allow-bg); }
+    .panel {
+      background: linear-gradient(180deg, #ffffff, #f9faff);
+      border: 1px solid #edf0ff;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .panel h2 {
+      margin: 0 0 14px;
+      font-size: 17px;
+    }
+    .chart-card {
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .profit {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 4px 0 0;
+      color: var(--accent-deep);
+    }
+    .chart-area {
+      height: 150px;
+      margin-top: 12px;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(109,124,255,0.12), rgba(109,124,255,0.02)),
+        repeating-linear-gradient(to right, transparent 0, transparent 46px, rgba(213,219,255,0.65) 46px, rgba(213,219,255,0.65) 47px),
+        repeating-linear-gradient(to top, transparent 0, transparent 36px, rgba(232,235,247,0.85) 36px, rgba(232,235,247,0.85) 37px);
+      position: relative;
+      overflow: hidden;
+    }
+    .chart-line {
+      position: absolute;
+      inset: 18px 16px 20px;
+    }
+    .chart-line svg {
+      width: 100%;
+      height: 100%;
+    }
+    .mini-list {
+      display: grid;
+      gap: 12px;
+    }
+    .mini-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(109,124,255,0.12);
+    }
+    .pie-card {
+      display: grid;
+      place-items: center;
+      min-height: 280px;
+    }
+    .pie {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: conic-gradient(#7a5cff 0 42%, #ffca63 42% 66%, #19c7c7 66% 81%, #57d68d 81% 92%, #cdd3f5 92% 100%);
+      position: relative;
+      margin: 10px auto 18px;
+      box-shadow: 0 16px 34px rgba(122, 92, 255, 0.18);
+    }
+    .pie::after {
+      content: "";
+      position: absolute;
+      inset: 42px;
+      background: white;
+      border-radius: 50%;
+    }
+    .legend {
+      width: 100%;
+      display: grid;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .legend-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .legend-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .summary-card {
+      margin: 0;
+      background: linear-gradient(180deg, #ffffff, #f9faff);
+      border: 1px solid #edf0ff;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .summary-card p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .table-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .table-card th, .table-card td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+    .table-card th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .claim-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .claim-card {
+      background: linear-gradient(180deg, #ffffff, #fbfcff);
+      border: 1px solid #edf0ff;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .claim-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .claim-chip {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      font-weight: 800;
+    }
+    .claim-card h3 {
+      margin: 0 0 8px;
+      font-size: 19px;
+    }
+    .card-sub, .card-summary {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .card-summary {
+      margin-top: 8px;
+      color: #4d5677;
+    }
+    .detail-box {
+      margin-top: 14px;
+      background: #fafbff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .detail-panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .detail-panel h4 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+    .cited-panel {
+      background: #f8fbff;
+    }
+    .cited-meta, .keyword-line {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: keep-all;
+      background: #ffffff;
+      border: 1px solid #efefef;
+      border-radius: 14px;
+      padding: 12px;
+      font-family: "Consolas", monospace;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    details summary {
+      cursor: pointer;
+      color: var(--accent-deep);
+      font-weight: 700;
+      list-style: none;
+    }
+    @media (max-width: 1280px) {
+      .dashboard-grid { grid-template-columns: 1fr 1fr; }
+      .claim-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: static; }
+      .stats { grid-template-columns: 1fr; }
+      .hero { flex-direction: column; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .topbar { padding: 0 14px; gap: 12px; }
+      .brand { font-size: 20px; }
+      .searchbar { width: 100%; }
+      .layout { padding: 14px; }
+      .claim-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-badge">▣</span>
+      <span>Claim Dashboard</span>
+    </div>
+    <div class="searchbar">
+      <input value="배터리 케이스 청구항 분석 현황" readonly>
+      <div class="search-action">⌕</div>
+    </div>
+    <div class="badge allowed">동희산업</div>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <div class="side-group">
+        <div class="side-title">바로가기</div>
+        <a class="nav-item" href="동희산업_배터리케이스_청구항표시.pdf"><span class="nav-icon">PDF</span><span>표시된 PDF</span></a>
+        <a class="nav-item" href="../동희산업 배터리케이스(수원,18,청구당6).pdf"><span class="nav-icon">명</span><span>원본 명세서</span></a>
+        <a class="nav-item" href="../5-20,동희산업, 의견제출, 진보성.pdf"><span class="nav-icon">의</span><span>원본 의견제출</span></a>
+        
+      </div>
+      <div class="side-group">
+        <div class="side-title">청구항 이동</div>
+        
+            <a class="nav-item" href="#claim-1">
+              <span class="nav-icon">1</span>
+              <span>청구항 1</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-2">
+              <span class="nav-icon">2</span>
+              <span>청구항 2</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-3">
+              <span class="nav-icon">3</span>
+              <span>청구항 3</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-4">
+              <span class="nav-icon">4</span>
+              <span>청구항 4</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-5">
+              <span class="nav-icon">5</span>
+              <span>청구항 5</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-6">
+              <span class="nav-icon">6</span>
+              <span>청구항 6</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-7">
+              <span class="nav-icon">7</span>
+              <span>청구항 7</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-8">
+              <span class="nav-icon">8</span>
+              <span>청구항 8</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-9">
+              <span class="nav-icon">9</span>
+              <span>청구항 9</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-10">
+              <span class="nav-icon">10</span>
+              <span>청구항 10</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-11">
+              <span class="nav-icon">11</span>
+              <span>청구항 11</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-12">
+              <span class="nav-icon">12</span>
+              <span>청구항 12</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-13">
+              <span class="nav-icon">13</span>
+              <span>청구항 13</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-14">
+              <span class="nav-icon">14</span>
+              <span>청구항 14</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-15">
+              <span class="nav-icon">15</span>
+              <span>청구항 15</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-16">
+              <span class="nav-icon">16</span>
+              <span>청구항 16</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-17">
+              <span class="nav-icon">17</span>
+              <span>청구항 17</span>
+            </a>
+            
+            <a class="nav-item" href="#claim-18">
+              <span class="nav-icon">18</span>
+              <span>청구항 18</span>
+            </a>
+            
+      </div>
+    </aside>
+
+    <main>
+      <section class="hero">
+        <div>
+          <h1>동희산업 배터리케이스 청구항 분석 대시보드</h1>
+          <p>의견제출통지서의 거절이유를 기준으로 명세서 청구항을 한 화면에서 관리할 수 있도록 요약 위젯, 상태표, 청구항 상세 카드로 재구성했습니다.</p>
+          <div class="links">
+            <a href="동희산업_배터리케이스_청구항표시.pdf">표시된 PDF 열기</a>
+            <a href="../동희산업 배터리케이스(수원,18,청구당6).pdf">명세서 PDF</a>
+            <a href="../5-20,동희산업, 의견제출, 진보성.pdf">의견제출 PDF</a>
+            
+          </div>
+        </div>
+        <section class="hero-side">
+          <h3>분석 요약</h3>
+          <p>거절이유 청구항: 1, 3, 4, 5, 9, 10, 11, 12, 13, 14, 16, 17</p>
+          <p>특허 가능 청구항: 2, 6, 8, 15, 18</p>
+          <p>업로드된 인용발명 PDF: 없음</p>
+          <p>관련 법조항: 특허법 제29조제2항</p>
+        </section>
+      </section>
+
+      <div class="chips">
+        <div class="chip active">전체</div>
+        <div class="chip">진보성 거절</div>
+        <div class="chip">특허 가능</div>
+        <div class="chip">청구항 표</div>
+        <div class="chip">상세 카드</div>
+      </div>
+
+      <section class="stats">
+        <div class="stat"><h3>거절이유 청구항</h3><p>1, 3, 4, 5, 9, 10, 11, 12, 13, 14, 16, 17</p></div>
+        <div class="stat"><h3>특허 가능 청구항</h3><p>2, 6, 8, 15, 18</p></div>
+        <div class="stat"><h3>관련 법조항</h3><p>특허법 제29조제2항</p></div>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel chart-card">
+          <div>
+            <h2>청구항 처리 현황</h2>
+            <p class="profit">12 / 18 지적</p>
+          </div>
+          <div class="chart-area">
+            <div class="chart-line">
+              <svg viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0,78 C30,76 44,70 63,64 C84,57 102,70 121,54 C143,35 165,42 187,28 C214,12 238,22 260,18 C276,15 288,18 300,12" fill="none" stroke="#6d7cff" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>핵심 포인트</h2>
+          <div class="mini-list">
+            <div class="mini-row"><span class="dot"></span><span>진보성 거절 중심</span><strong>12건</strong></div>
+            <div class="mini-row"><span class="dot" style="background:#23b98f; box-shadow:0 0 0 6px rgba(35,185,143,0.12)"></span><span>특허 가능 청구항</span><strong>5건</strong></div>
+            <div class="mini-row"><span class="dot" style="background:#ffb14a; box-shadow:0 0 0 6px rgba(255,177,74,0.12)"></span><span>검토 총 청구항</span><strong>18건</strong></div>
+          </div>
+        </section>
+
+        <section class="panel pie-card">
+          <div>
+            <h2>상태 비율</h2>
+            <div class="pie"></div>
+            <div class="legend">
+              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#7a5cff"></span>거절이유</span><span>12</span></div>
+              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#57d68d"></span>특허 가능</span><span>5</span></div>
+              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#cdd3f5"></span>기타</span><span>1</span></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel table-card">
+          <h2>청구항 상태표</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>청구항</th>
+                <th>상태</th>
+                <th>페이지</th>
+                <th>인용발명</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+            <tr>
+              <td>청구항 1</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>19</td>
+              <td>1</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 2</td>
+              <td><span class="badge allowed">특허 가능</span></td>
+              <td>19</td>
+              <td>-</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 3</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>19</td>
+              <td>1</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 4</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>19</td>
+              <td>1</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 5</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>19</td>
+              <td>1</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 6</td>
+              <td><span class="badge allowed">특허 가능</span></td>
+              <td>20</td>
+              <td>-</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 7</td>
+              <td><span class="badge allowed">미분류</span></td>
+              <td>20</td>
+              <td>-</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 8</td>
+              <td><span class="badge allowed">특허 가능</span></td>
+              <td>20</td>
+              <td>-</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 9</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>20</td>
+              <td>1</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 10</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>20</td>
+              <td>1, 2</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 11</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>21</td>
+              <td>1, 2</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 12</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>21</td>
+              <td>1, 3</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 13</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>21</td>
+              <td>1, 3</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 14</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>21</td>
+              <td>1, 3</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 15</td>
+              <td><span class="badge allowed">특허 가능</span></td>
+              <td>22</td>
+              <td>-</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 16</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>22</td>
+              <td>1, 4</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 17</td>
+              <td><span class="badge rejected">거절이유</span></td>
+              <td>22</td>
+              <td>1, 4</td>
+            </tr>
+            
+            <tr>
+              <td>청구항 18</td>
+              <td><span class="badge allowed">특허 가능</span></td>
+              <td>22</td>
+              <td>-</td>
+            </tr>
+            
+            </tbody>
+          </table>
+        </section>
+
+        <section class="summary-card">
+          <h2 style="margin:0 0 14px; font-size:17px;">표시 기준</h2>
+          <p>주황 배지는 의견제출통지서에서 진보성 거절이유가 지적된 청구항입니다.</p>
+          <p>초록 배지는 의견제출 시점 기준 특허 가능 청구항입니다.</p>
+          <p>아래 카드에서 각 청구항의 원문과 심사의견 전문을 확인할 수 있습니다.</p>
+        </section>
+      </section>
+
+      <section class="claim-grid">
+        
+            <article class="claim-card" id="claim-1">
+              <div class="claim-card-top">
+                <div class="claim-chip">#1</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 1</h3>
+              <p class="card-sub">페이지 19 · 인용발명 1</p>
+              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 1】
+배터리가 안착되며, 상하방향으로 연장된 체결볼트가 관통되고, 상기 체결볼트가 관통되
+는 지점에는 상방을 향해 돌출된 체결부가 형성되며, 상기 체결부의 하방에는 상기 체결
+부의 돌출로 인해 상기 체결볼트의 헤드부가 위치되는 내부공간이 형성된 케이스로워판
+넬; 및
+상하방향으로 연장된 중공의 파이프 형상으로써 상기 체결볼트를 감싸도록 배터리 케이
+스의 내부에 마련되며, 하단이 상기 체결부의 상단에 고정된 체결파이프;를 포함하는 배
+터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제1항(독립항)
+다만, 청구항 제1항의 구성 1은 배터리가 안착되며, 상하방향으로 연장된 체결볼트가 관통
+되고, 상기 체결볼트가 관통되는 지점에는 상방을 향해 돌출된 체결부가 형성되며, 상기 체
+결부의 하방에는 상기 체결부의 돌출로 인해 상기 체결볼트의 헤드부가 위치되는 내부공간
+청구항 제1항
+인용발명 1
+(식별번호 [0001], [0034] 내지
+[0037], 도 1 내지 3 등 참조)
+비고
+구성
+1
+배터리가 안착되며, 상하방향으로 연
+장된 체결볼트가 관통되고, 상기 체
+결볼트가 관통되는 지점에는 상방을
+향해 돌출된 체결부가 형성되며, 상
+기 체결부의 하방에는 상기 체결부의
+돌출로 인해 상기 체결볼트의 헤드부
+가 위치되는 내부공간이 형성된 케이
+스로워판넬;
+차이
+구성
+2
+상하방향으로 연장된 중공의 파이프
+형상으로써 상기 체결볼트를 감싸도
+록 배터리 케이스의 내부에 마련되
+며, 하단이 상기 체결부의 상단에 고
+정된 체결파이프;를 포함하는 배터리
+케이스
+중공의 파이프 형상으로 볼트
+가 관통되며, 파이프축부(41)
+의 하단부가 제3받침부(33)의
+상측면과 용접되는 파이프부
+(40);
+배터리팩 케이스
+실질적
+동일
+이 형성된 케이스로워판넬이 있는 점에서 인용발명 1과 일부 차이가 있으나,
+상기 차이에 관해서는 인용발명 1에 배터리팩(100)이 안착되고, 차체에 체결되는 볼트가 관
+통되고, 볼트가 관통되는 지점에 받침부(30)가 형성되며, 받침부(30)의 하방에는 볼트의 머
+리부가 걸리는 제3받침부(33)가 형성되는 냉각부(10)(인용발명 1의 식별번호 [0019] 내지
+[0033], 도 1 내지 3 등 참조)이 기재되어 있습니다.
+따라서, 청구항 제1항은 통상의 기술자가 인용발명 1로부터 쉽게 발명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-2">
+              <div class="claim-card-top">
+                <div class="claim-chip">#2</div>
+                <span class="badge allowed">특허 가능</span>
+              </div>
+              <h3>청구항 2</h3>
+              <p class="card-sub">페이지 19 · 인용발명 -</p>
+              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
+              <details class="detail-box" >
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 2】
+청구항 1에 있어서,
+상기 체결부는 상기 체결파이프의 직경보다 긴 직경을 갖는 원형 단면을 갖도록 형성된
+것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>의견제출통지서에 따르면 현재 심사 의견상 특허 가능 청구항으로 표시되었습니다.</pre>
+                  </section>
+                  
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-3">
+              <div class="claim-card-top">
+                <div class="claim-chip">#3</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 3</h3>
+              <p class="card-sub">페이지 19 · 인용발명 1</p>
+              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 3】
+청구항 1에 있어서,
+상기 체결파이프는 상기 체결파이프의 하단에서 상기 체결파이프의 외측 둘레를 따라 상
+기 체결부와 함께 용접됨으로써 상기 체결부의 상단에 고정된 것을 특징으로 하는 배터리
+케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제3항(제1항의 종속항)
+상기 청구항의 한정한 사항에 대하여 인용발명 1에 파이프축부(41)는 하단부가 제3받침부
+(33)의 상측면과 용접(인용발명 1의 식별번호 [0035] 등 참조)이 기재되어 있습니다. 이에
+따라 통상의 기술자가 필요에 따라 용접하는 것을 특별한 어려움 없이 설계변경할 수 있는
+것으로서, 효과 또한 통상적으로 예측이 가능합니다.
+따라서, 청구항 제3항은 통상의 기술자가 인용발명 1로부터 쉽게 발명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-4">
+              <div class="claim-card-top">
+                <div class="claim-chip">#4</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 4</h3>
+              <p class="card-sub">페이지 19 · 인용발명 1</p>
+              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 4】
+청구항 1에 있어서,
+상기 케이스로워판넬의 폭방향 또는 길이방향을 따라 상기 케이스로워판넬에 안착되는
+지지멤버;를 더 포함하고,
+상기 체결파이프는 상기 지지멤버의 높이방향을 따라 상기 지지멤버를 관통하도록 마련
+된 것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제4항(제1항의 종속항)
+상기 청구항의 한정한 사항에 대하여 인용발명 1에 크로스멤버부(20)는 냉각부(10)의 상
+측면을 가로지르도록 배치; 파이프축부(41)는 받침부(30)에 결합되고, 크로스멤버부(20)를
+관통(인용발명 1의 식별번호 [0021], [0035], 도 1 내지 3 등 참조)이 기재되어 있습니다.
+이에 따라 통상의 기술자가 필요에 따라 지지멤버를 포함하고 관통하는 것을 특별한 어려움
+없이 설계변경할 수 있는 것으로서, 효과 또한 통상적으로 예측이 가능합니다.
+따라서, 청구항 제4항은 통상의 기술자가 인용발명 1로부터 쉽게 발명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-5">
+              <div class="claim-card-top">
+                <div class="claim-chip">#5</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 5</h3>
+              <p class="card-sub">페이지 19 · 인용발명 1</p>
+              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 5】
+청구항 4에 있어서,</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제5항(제4항의 종속항)
+상기 청구항의 한정한 사항에 대하여 인용발명 1에 크로스멤버부(20)의 하부에는 크로스
+멤버부(20)의 폭방향을 따라 개방된 개방공간(미도시)가 형성되고, 파이프부(40)는 크로스
+멤버부(20)를 관통하되, 개방공간(미도시)에 의해 파이프부(40)의 하단부가 크로스멤버부
+(20)의 외측으로 노출되도록 마련되며, 파이프부(40)는 개방공간(미도시)에 의해 노출된 파
+이프부(40)의 하단부가 받침부(30)의 제3받침부(33)의 상측면과 용접(인용발명 1의 식별번
+호 [0034] 내지 [0037], 도 1 내지 3 등 참조)이 기재되어 있습니다. 이에 따라 통상의 기
+술자가 필요에 따라 개방공간을 갖고 용접되는 등을 특별한 어려움 없이 설계변경할 수 있
+는 것으로서, 효과 또한 통상적으로 예측이 가능합니다.
+따라서, 청구항 제5항은 통상의 기술자가 인용발명 1로부터 쉽게 발명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-6">
+              <div class="claim-card-top">
+                <div class="claim-chip">#6</div>
+                <span class="badge allowed">특허 가능</span>
+              </div>
+              <h3>청구항 6</h3>
+              <p class="card-sub">페이지 20 · 인용발명 -</p>
+              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
+              <details class="detail-box" >
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 6】
+청구항 4에 있어서,
+상기 체결파이프는 복수로 마련되며, 상기 지지멤버를 따라 서로 이격되어 배치된 것을
+특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>의견제출통지서에 따르면 현재 심사 의견상 특허 가능 청구항으로 표시되었습니다.</pre>
+                  </section>
+                  
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-7">
+              <div class="claim-card-top">
+                <div class="claim-chip">#7</div>
+                <span class="badge allowed">미분류</span>
+              </div>
+              <h3>청구항 7</h3>
+              <p class="card-sub">페이지 20 · 인용발명 -</p>
+              <p class="card-summary"></p>
+              <details class="detail-box" >
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 7】
+청구항 1에 있어서,
+상기 체결파이프의 하면에는 제1 관통홀이 형성되고, 상기 체결부에는 제1 체결홀이 형
+성되며,
+상기 체결파이프는 상기 제1 관통홀의 중심과 상기 제1 체결홀의 중심이 동일축 상에 위
+치하도록 상기 체결부에 고정된 것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre></pre>
+                  </section>
+                  
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-8">
+              <div class="claim-card-top">
+                <div class="claim-chip">#8</div>
+                <span class="badge allowed">특허 가능</span>
+              </div>
+              <h3>청구항 8</h3>
+              <p class="card-sub">페이지 20 · 인용발명 -</p>
+              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
+              <details class="detail-box" >
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 8】
+청구항 7에 있어서,
+상기 제1 체결홀은 상기 제1 관통홀의 직경보다 작거나 같은 직경을 갖도록 형성된 것을
+특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>의견제출통지서에 따르면 현재 심사 의견상 특허 가능 청구항으로 표시되었습니다.</pre>
+                  </section>
+                  
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-9">
+              <div class="claim-card-top">
+                <div class="claim-chip">#9</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 9</h3>
+              <p class="card-sub">페이지 20 · 인용발명 1</p>
+              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 9】
+청구항 1에 있어서,
+상기 체결파이프의 내부에는 중공을 형성하는 관통홀부가 형성되며,
+상기 체결볼트는 상기 케이스로워판넬의 하방에서 상기 체결부 및 상기 체결파이프에 형
+성된 상기 관통홀부를 관통하는 것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제9항(제1항의 종속항)
+상기 청구항의 한정한 사항에 대하여 인용발명 1에 받침부(30)에는 파이프부(40)를 관통
+하여 차체에 체결되는 볼트가 지지(인용발명 1의 식별번호 [0022] 등 참조)가 기재되어 있
+습니다. 이에 따라 통상의 기술자가 필요에 따라 관통하는 것을 특별한 어려움 없이 설계변
+경할 수 있는 것으로서, 효과 또한 통상적으로 예측이 가능합니다.
+따라서, 청구항 제9항은 통상의 기술자가 인용발명 1로부터 쉽게 발명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-10">
+              <div class="claim-card-top">
+                <div class="claim-chip">#10</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 10</h3>
+              <p class="card-sub">페이지 20 · 인용발명 1, 2</p>
+              <p class="card-summary">냉각유로/냉각블록 구성에 대해 인용발명 1, 2의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 10】</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제10항(제1항의 종속항), 제11항(제10항의 종속항)
+상기 청구항들의 한정한 사항은 인용발명 1에 제시되지 않았으나, 인용발명 2에 지지부
+(30)가 그 상면에 요철 형상의 냉각유로(310)가 형성되어 냉각블록(300)이 되는 것(인용발
+명 2의 식별번호 [0052], 도 1, 2, 8 등 참조)이 기재되어 있습니다.
+인용발명 1, 2는 모두 케이스를 갖는 공통점이 있으므로, 통상의 기술자라면 인용발명 2의
+지지부가 그 상면에 요철 형상의 냉각유로가 형성되어 냉각블록이 되는 구성을 인용발명 1
+의 케이스에 도입하여 적용하는 것을 특별한 어려움 없이 설계 변경할 수 있습니다. 이 출
+원 발명의 효과 또한 인용발명 1, 2로부터 충분히 예측 가능합니다.
+따라서, 청구항 제10항 및 제11항은 통상의 기술자가 인용발명 1, 2의 단순한 결합으로부터
+쉽게 발명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 2 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-11">
+              <div class="claim-card-top">
+                <div class="claim-chip">#11</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 11</h3>
+              <p class="card-sub">페이지 21 · 인용발명 1, 2</p>
+              <p class="card-summary">냉각유로/냉각블록 구성에 대해 인용발명 1, 2의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 11】
+청구항 10에 있어서,
+상기 케이스로워판넬에는 상기 체결부가 형성된 주변 지점에서 상방으로 돌출되도록 절
+곡된 제1 절곡부가 형성되고,
+상기 냉각판넬에는 상기 제1 절곡부와 대응되는 지점에서 하방으로 돌출되도록 절곡된
+제2 절곡부가 형성되며,
+상기 케이스로워판넬과 상기 냉각판넬의 결합시 일정 거리 이격된 상기 제1 절곡부 및 상
+기 제2 절곡부가 냉각유로를 형성하는 것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제10항(제1항의 종속항), 제11항(제10항의 종속항)
+상기 청구항들의 한정한 사항은 인용발명 1에 제시되지 않았으나, 인용발명 2에 지지부
+(30)가 그 상면에 요철 형상의 냉각유로(310)가 형성되어 냉각블록(300)이 되는 것(인용발
+명 2의 식별번호 [0052], 도 1, 2, 8 등 참조)이 기재되어 있습니다.
+인용발명 1, 2는 모두 케이스를 갖는 공통점이 있으므로, 통상의 기술자라면 인용발명 2의
+지지부가 그 상면에 요철 형상의 냉각유로가 형성되어 냉각블록이 되는 구성을 인용발명 1
+의 케이스에 도입하여 적용하는 것을 특별한 어려움 없이 설계 변경할 수 있습니다. 이 출
+원 발명의 효과 또한 인용발명 1, 2로부터 충분히 예측 가능합니다.
+따라서, 청구항 제10항 및 제11항은 통상의 기술자가 인용발명 1, 2의 단순한 결합으로부터
+쉽게 발명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 2 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-12">
+              <div class="claim-card-top">
+                <div class="claim-chip">#12</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 12</h3>
+              <p class="card-sub">페이지 21 · 인용발명 1, 3</p>
+              <p class="card-summary">인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 12】
+청구항 10에 있어서,
+상기 냉각판넬의 하면에 결합되어 상기 케이스로워판넬 및 상기 냉각판넬을 커버링하는
+언더커버; 및
+상기 언더커버의 하방에서 상기 냉각판넬 및 상기 언더커버를 관통하여 상기 체결부의 하
+면에 안착되며, 일부가 상기 체결부에 형성된 내부공간에 마련된 컵와서;를 더 포함하는
+것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제12항(제10항의 종속항)
+상기 청구항의 한정한 사항은 인용발명 1. 2에 제시되지 않았으나, 인용발명 3에
+쿨링시스템(30)이 구비된 배터리케이스(1)의 하부를 커버링하도록 언더커버(40)가 결합; 언
+더커버(40)의 체결장치는 언더커버(40)의 소정부위에 중첩을 이루는 컵와셔(100); 상기 컵
+와셔(100)와 언더커버(40)의 중첩부를 결합시키는 접착부재(200); 및 상기 컵와셔(100)와
+배터리케이스(1)를 관통해서 차체측 멤버부재(50)에 체결되고, 차체측 멤버부재(50)에 체결
+될 때에 컵와셔(100)를 가압해서 컵와셔(100)의 결합을 유지시키는 체결볼트(300);를 포함
+(인용발명 3의 식별번호 [0056], [0057], [0060], 도 1 내지 4 등 참조)이 기재되어 있습니
+다.
+인용발명 1 내지 3은 모두 케이스를 갖는 공통점이 있으므로, 통상의 기술자라면 인용발명
+3의 쿨링시스템이 구비된 배터리케이스의 하부를 커버링하도록 언더커버가 결합; 언더커버
+의 체결장치는 언더커버의 소정부위에 중첩을 이루는 컵와셔; 상기 컵와셔와 언더커버의 중
+첩부를 결합시키는 접착부재; 및 상기 컵와셔와 배터리케이스를 관통해서 차체측 멤버부재
+에 체결되고, 차체측 멤버부재에 체결될 때에 컵와셔를 가압해서 컵와셔의 결합을 유지시키
+는 체결볼트를 포함하는 구성을 인용발명 1, 2의 케이스에 도입하여 적용하는 것을 특별한
+어려움 없이 설계 변경할 수 있습니다. 이 출원 발명의 효과 또한 인용발명 1 내지 3으로부
+터 충분히 예측 가능합니다.
+따라서, 청구항 제12항은 통상의 기술자가 인용발명 1 내지 3의 결합으로부터 쉽게 발명할
+수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 3 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-13">
+              <div class="claim-card-top">
+                <div class="claim-chip">#13</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 13</h3>
+              <p class="card-sub">페이지 21 · 인용발명 1, 3</p>
+              <p class="card-summary">인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 13】
+청구항 12에 있어서,
+상기 컵와셔에는 상기 언더커버의 외측에서 상방으로 절곡된 단부가 형성되며, 상기 컵와
+셔의 단부는 상기 언더커버의 하면에 결합되어 상기 냉각판넬 및 상기 언더커버를 가압하
+는 것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제13항(제12항의 종속항)
+상기 청구항의 한정한 사항에 대하여 인용발명 3에 체결볼트(300)의 조립이 완료되면 체
+결볼트(300)의 체결력으로 컵와셔(100)의 와셔부(110)는 접착부재(200)를 매개로 언더커버
+(40)와 견고하게 결합(인용발명 3의 식별번호 [0071] 등 참조)이 기재되어 있습니다. 이에
+따라 통상의 기술자가 필요에 따라 가압하는 것을 특별한 어려움 없이 설계변경할 수 있는
+것으로서, 효과 또한 통상적으로 예측이 가능합니다.
+따라서, 청구항 제13항은 통상의 기술자가 인용발명 1 내지 3의 결합으로부터 쉽게 발명할
+수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 3 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-14">
+              <div class="claim-card-top">
+                <div class="claim-chip">#14</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 14</h3>
+              <p class="card-sub">페이지 21 · 인용발명 1, 3</p>
+              <p class="card-summary">인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 14】</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제14항(제1항의 종속항)
+상기 청구항의 한정한 사항은 인용발명 1에 제시되지 않았으나, 인용발명 3에 파이프부시
+(500)는 하부케이스(20)의 횡멤버(21)에 다수개가 고정되며, 파이프부시(500)의 상하단이
+상부케이스(10)와 서포트컵(400)에 지지(인용발명 3의 식별번호 [0066] 등 참조)가 기재되
+어 있습니다.
+인용발명 1, 3은 모두 케이스를 갖는 공통점이 있으므로, 통상의 기술자라면 인용발명 3의
+파이프부시; 상부케이스 구성을 인용발명 1의 케이스에 도입하여 적용하는 것을 특별한 어
+려움 없이 설계 변경할 수 있습니다. 이 출원 발명의 효과 또한 인용발명 1, 3으로부터 충
+분히 예측 가능합니다.
+따라서, 청구항 제14항은 통상의 기술자가 인용발명 1, 3의 단순한 결합으로부터 쉽게 발명
+할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 3 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-15">
+              <div class="claim-card-top">
+                <div class="claim-chip">#15</div>
+                <span class="badge allowed">특허 가능</span>
+              </div>
+              <h3>청구항 15</h3>
+              <p class="card-sub">페이지 22 · 인용발명 -</p>
+              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
+              <details class="detail-box" >
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 15】
+청구항 14에 있어서,
+상기 체결파이프의 상면에는 제2 관통홀이 형성되고, 상기 케이스어퍼판넬에는 제2 체결
+홀이 형성되며,
+상기 체결파이프의 상면은 상기 제2 관통홀의 중심과 상기 제2 체결홀의 중심이 동일축
+상에 위치하도록 상기 케이스어퍼판넬에 면착된 것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>의견제출통지서에 따르면 현재 심사 의견상 특허 가능 청구항으로 표시되었습니다.</pre>
+                  </section>
+                  
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-16">
+              <div class="claim-card-top">
+                <div class="claim-chip">#16</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 16</h3>
+              <p class="card-sub">페이지 22 · 인용발명 1, 4</p>
+              <p class="card-summary">인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 16】
+청구항 14에 있어서,
+상기 케이스어퍼판넬에 면착된 상기 체결파이프를 고정하도록 상기 케이스어퍼판넬의
+상방에서 상기 케이스어퍼판넬을 관통하여 상기 체결파이프의 내부에 형성된 관통홀부
+에 삽입되는 고정볼트;를 더 포함하고,
+상기 체결볼트는 상기 케이스어퍼판넬의 상방으로 일부가 돌출되도록 상기 케이스로워
+판넬의 하방에서 상기 체결부, 상기 관통홀부 및 상기 고정볼트를 관통하는 것을 특징으
+로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제16항(제14항의 종속항)
+상기 청구항의 한정한 사항은 인용발명 1, 3에 제시되지 않았으나, 인용발명 4에 내부에
+관통홀(H3)이 형성되어 배터리 팩 케이스(BC)의 상부에 구성되는 커버(C)의 외측에서 커버
+(C)를 관통하여 체결 파이프(11)의 상부에서 관통홀(H2)에 삽입되는 쿠션(13)를 구비하고,
+롱 볼트(17)는 파이프 브라켓(15), 체결 파이프(11) 및 쿠션(13)의 관통홀(H3)을 통해 차체
+프레임(F)에 체결(인용발명 4의 식별번호 [0030] 내지 [0033], 도 2 등 참조)이 기재되어
+있습니다.
+인용발명 1, 3, 4는 모두 케이스를 갖는 공통점이 있으므로, 통상의 기술자라면 인용발명 4
+의 내부에 관통홀이 형성되어 배터리 팩 케이스의 상부에 구성되는 커버의 외측에서 커버를
+관통하여 체결 파이프의 상부에서 관통홀에 삽입되는 쿠션을 구비하고, 롱 볼트는 파이프
+브라켓, 체결 파이프 및 쿠션의 관통홀을 통해 차체 프레임에 체결되는 구성을 인용발명 1,
+3의 케이스에 도입하여 적용하는 것을 특별한 어려움 없이 설계 변경할 수 있습니다. 이 출
+원 발명의 효과 또한 인용발명 1, 3, 4로부터 충분히 예측 가능합니다.
+따라서, 청구항 제16항은 통상의 기술자가 인용발명 1, 3, 4의 결합으로부터 쉽게 발명할
+수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 4 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-17">
+              <div class="claim-card-top">
+                <div class="claim-chip">#17</div>
+                <span class="badge rejected">거절이유</span>
+              </div>
+              <h3>청구항 17</h3>
+              <p class="card-sub">페이지 22 · 인용발명 1, 4</p>
+              <p class="card-summary">인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
+              <details class="detail-box" open>
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 17】
+청구항 1에 있어서,
+상기 체결파이프의 내부에는 중공을 형성하는 관통홀부가 형성되며, 상기 체결파이프에
+는 상기 관통홀부를 둘러싼 내측면이 형성되고,
+상기 체결파이프의 하부 내측면은 하단부에 가까워질수록 상기 관통홀부가 형성하는 공
+간이 확장되도록 경사지게 형성된 것을 특징으로 하는 배터리 케이스.</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>청구항 제17항(제1항의 종속항)
+상기 청구항의 한정한 사항은 인용발명 1에 제시되지 않았으나, 인용발명 4에 체결 파이
+프(11)는 내부에 관통홀(H2)에 형성된 중공 파이프로 이루어져 배터리 팩 케이스(BC)의 중
+앙부 일측을 관통하여 배치; 체결 파이프(11)의 하부 내측면은 하단부에 가까워질수록 관통
+홀(H2)이 형성하는 공간이 경사지게 형성(인용발명 4의 식별번호 [0031], 도 2 등 참조)이
+기재되어 있습니다.
+인용발명 1, 4는 모두 케이스를 갖는 공통점이 있으므로, 통상의 기술자라면 인용발명 4의
+체결 파이프; 관통홀이 형성하는 공간이 경사진 구성을 인용발명 1의 케이스에 도입하여 적
+용하는 것을 특별한 어려움 없이 설계 변경할 수 있습니다. 이 출원 발명의 효과 또한 인용
+발명 1, 4로부터 충분히 예측 가능합니다.
+따라서, 청구항 제17항은 통상의 기술자가 인용발명 1, 4 의 단순한 결합으로부터 쉽게 발
+명할 수 있습니다.</pre>
+                  </section>
+                  
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 1 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                <section class="detail-panel cited-panel">
+                  <h4>인용발명 4 비교</h4>
+                  <p class="cited-meta">미업로드 · 페이지 -</p>
+                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
+                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                </section>
+                
+                </div>
+              </details>
+            </article>
+            
+            <article class="claim-card" id="claim-18">
+              <div class="claim-card-top">
+                <div class="claim-chip">#18</div>
+                <span class="badge allowed">특허 가능</span>
+              </div>
+              <h3>청구항 18</h3>
+              <p class="card-sub">페이지 22 · 인용발명 -</p>
+              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
+              <details class="detail-box" >
+                <summary>상세 보기</summary>
+                <div class="detail-grid">
+                  <section class="detail-panel">
+                    <h4>청구항 본문</h4>
+                    <pre>【청구항 18】</pre>
+                  </section>
+                  <section class="detail-panel">
+                    <h4>거절이유 / 심사의견</h4>
+                    <pre>의견제출통지서에 따르면 현재 심사 의견상 특허 가능 청구항으로 표시되었습니다.</pre>
+                  </section>
+                  
+                </div>
+              </details>
+            </article>
+            
+      </section>
+    </main>
+  </div>
+</body>
+</html>
