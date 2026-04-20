@@ -14,7 +14,7 @@ from typing import Dict, Iterable, List
 import fitz
 
 
-LAW_TEXT = "특허법 제29조제2항"
+LAW_TEXT = "특허법 제29조 제2항"
 REJECTED_COLOR = (0.82, 0.2, 0.2)
 REJECTED_FILL = (1.0, 0.93, 0.93)
 ALLOWED_COLOR = (0.14, 0.45, 0.23)
@@ -102,7 +102,7 @@ def read_pdf_text(pdf_path: Path) -> List[str]:
 
 def expand_claim_range(raw_text: str) -> List[int]:
     values = [int(value) for value in re.findall(r"\d+", raw_text)]
-    if ("내지" in raw_text or "-" in raw_text or "~" in raw_text) and len(values) >= 2:
+    if any(sep in raw_text for sep in ("내지", "-", "~")) and len(values) >= 2:
         return list(range(values[0], values[1] + 1))
     return values
 
@@ -117,9 +117,9 @@ def parse_claim_list(raw_text: str) -> List[int]:
     normalized = normalized.replace("부터", "-")
     normalized = normalized.replace("~", "-")
     normalized = normalized.replace("및", ",")
-    normalized = normalized.replace("와", ",")
     normalized = normalized.replace("또는", ",")
-    for part in re.split(r"[,·]", normalized):
+    normalized = normalized.replace("또", ",")
+    for part in re.split(r"[,ㆍ·]", normalized):
         if not part:
             continue
         claims.extend(expand_claim_range(part))
@@ -132,11 +132,11 @@ def parse_claim_text(raw_text: str, all_claim_numbers: Iterable[int] | None = No
 
     known_claims = sorted(set(all_claim_numbers or []))
     compact = re.sub(r"\s+", "", raw_text)
-    if "전항" in compact:
+    if "전체항" in compact or "전항" in compact:
         return known_claims
 
     matches = re.findall(
-        r"청구항([^[]+?)(?=청구항|관련법조항|구체적인거절이유|특허가능한청구항|$)",
+        r"청구항(.+?)(?=청구항관련법조항|구체적인거절이유|특허가능청구항|특허가능한청구항|$)",
         compact,
     )
     if matches:
@@ -158,8 +158,8 @@ def extract_status_lists(
 
     rejected_text = ""
     for pattern in (
-        r"\[심사결과\].*?거절이유가있는부분관련법조항\d+(청구항.+?)특허법제\d+조제\d+항",
-        r"거절이유가있는부분관련법조항\d+(청구항.+?)특허법제\d+조제\d+항",
+        r"\[심사결과\].*?거절이유가있는(?:청구항|부분)[:：]?(.+?)(?:특허법제\d+조제\d+항|구체적인거절이유|특허가능청구항|특허가능한청구항|$)",
+        r"거절이유가있는(?:청구항|부분)[:：]?(.+?)(?:특허법제\d+조제\d+항|구체적인거절이유|특허가능청구항|특허가능한청구항|$)",
     ):
         rejected_match = re.search(pattern, compact)
         if rejected_match:
@@ -168,7 +168,7 @@ def extract_status_lists(
 
     allowed_text = ""
     allowed_match = re.search(
-        r"특허가능한청구항[:：]?(.*?)(?:※|\[구체적인거절이유\]|구체적인거절이유)",
+        r"특허가능(?:한)?청구항[:：]?(.*?)(?:※|\[구체적인거절이유\]|구체적인거절이유|$)",
         compact,
     )
     if allowed_match:
@@ -183,7 +183,7 @@ def extract_status_lists(
         allowed_claims = sorted(set(known_claims) - set(rejected_claims))
 
     if not rejected_claims and not allowed_claims:
-        raise RuntimeError("의견제출통지서에서 청구항 상태를 파싱하지 못했습니다.")
+        raise RuntimeError("의견제출통지서에서 청구항 상태를 판별하지 못했습니다.")
 
     return rejected_claims, allowed_claims
 
@@ -357,7 +357,7 @@ def extract_claim_reasons(
             continue
         if re.match(r"첨부\d", stripped):
             continue
-        if stripped in {"[첨 부]", "[첨부]"}:
+        if stripped in {"[첨부]", "[첨부서류]", "[첨 부]"}:
             break
         lines.append(stripped)
 
@@ -383,7 +383,7 @@ def extract_claim_reasons(
             results[claim_number] = reason
 
     for line in lines:
-        if line.startswith("[보정에 관한 참고사항]"):
+        if line.startswith("[보정에 관한 참고사항]") or line.startswith("[보정 관련 참고사항]"):
             flush_block(current_block, current_claims)
             break
         if re.match(r"^1-\d+\.\s*청구항", line):
@@ -391,7 +391,7 @@ def extract_claim_reasons(
             current_block = [line]
             current_claims = parse_claim_text(line, all_claim_numbers)
             continue
-        if re.match(r"^제\s*\d+\s*항\s*발명은", line):
+        if re.match(r"^제?\s*\d+\s*항\s*발명[은에]", line):
             flush_block(current_block, current_claims)
             current_block = [line]
             current_claims = parse_claim_text(line, all_claim_numbers)
@@ -436,7 +436,7 @@ def extract_claim_texts(spec_pdf: Path) -> Dict[int, ClaimEntry]:
 
     for page_index in range(doc.page_count):
         text = doc.load_page(page_index).get_text("text")
-        matches = list(re.finditer(r"【청구항\s*(\d+)】", text))
+        matches = list(re.finditer(r"【?청구항\s*(\d+)】?", text))
         for idx, match in enumerate(matches):
             claim_no = int(match.group(1))
             end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)

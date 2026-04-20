@@ -324,7 +324,6 @@ def render_result_page(
     pdf_link = _data_url(pdf_bytes, "application/pdf")
     json_link = _data_url(json_bytes, "application/json")
     zip_link = _data_url(zip_bytes, "application/zip")
-    json_preview = html.escape(json_bytes.decode("utf-8"))
 
     return f"""<!doctype html>
 <html lang="ko">
@@ -424,18 +423,6 @@ def render_result_page(
       line-height: 1.7;
       color: var(--muted);
     }}
-    .code {{
-      margin-top: 10px;
-      padding: 12px;
-      border-radius: 14px;
-      background: #f7fafc;
-      border: 1px solid var(--line);
-      font-size: 13px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 220px;
-      overflow: auto;
-    }}
     .viewer {{
       padding: 12px;
     }}
@@ -480,10 +467,6 @@ def render_result_page(
         <section>
           <h3>분석 PDF</h3>
           <p>{html.escape(pdf_name)}</p>
-        </section>
-        <section>
-          <h3>JSON 미리보기</h3>
-          <div class="code">{json_preview}</div>
         </section>
       </aside>
 
