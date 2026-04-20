@@ -22,6 +22,7 @@ ALLOWED_FILL = (0.92, 0.98, 0.92)
 NEUTRAL_COLOR = (0.2, 0.2, 0.2)
 NEUTRAL_FILL = (0.95, 0.95, 0.95)
 KOREAN_FONT_CANDIDATES = [
+    Path(__file__).resolve().parent / "fonts" / "NotoSansKR-VF.ttf",
     Path(r"C:\Windows\Fonts\malgun.ttf"),
     Path(r"C:\Windows\Fonts\malgunbd.ttf"),
 ]
@@ -527,6 +528,7 @@ def annotate_spec_pdf(
     doc = fitz.open(source_pdf)
     save_path = make_unique_output_path(output_pdf)
     font_path = next((path for path in KOREAN_FONT_CANDIDATES if path.exists()), None)
+    use_ascii_note = font_path is None
 
     for entry in claim_entries.values():
         page = doc.load_page(entry.page_number - 1)
@@ -551,9 +553,20 @@ def annotate_spec_pdf(
         if len(short_reason) > 22:
             short_reason = short_reason[:22].rstrip() + "..."
 
-        note_lines = [f"청구항 {entry.claim_no}: {entry.status}"]
-        if short_reason:
-            note_lines.append(short_reason)
+        display_status = entry.status
+        display_reason = short_reason
+        if use_ascii_note:
+            status_map = {
+                "거절이유": "Rejected",
+                "특허 가능": "Allowed",
+                "미분류": "Pending",
+            }
+            display_status = status_map.get(entry.status, "Pending")
+            display_reason = ""
+
+        note_lines = [f"Claim {entry.claim_no}: {display_status}" if use_ascii_note else f"청구항 {entry.claim_no}: {display_status}"]
+        if display_reason:
+            note_lines.append(display_reason)
 
         if font_path is not None:
             page.insert_font(fontname="kfont", fontfile=str(font_path))
