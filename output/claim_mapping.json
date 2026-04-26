@@ -13,13 +13,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "안착되며",
+          "상하방향으로",
+          "연장된",
+          "체결볼트가",
+          "관통되고",
+          "관통되"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 4,
@@ -56,13 +63,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "1에",
+          "체결파이프는",
+          "체결파이프의",
+          "하단에서",
+          "외측",
+          "둘레를"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       }
     ]
   },
@@ -79,13 +93,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "1에",
+          "케이스로워판넬의",
+          "폭방향",
+          "길이방향을",
+          "따라",
+          "케이스로워판넬에"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       }
     ]
   },
@@ -102,13 +123,15 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "4에"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       }
     ]
   },
@@ -155,13 +178,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "1에",
+          "체결파이프의",
+          "내부에는",
+          "중공을",
+          "형성하는",
+          "관통홀부가"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       }
     ]
   },
@@ -179,13 +209,13 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
         "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 3,
@@ -213,23 +243,41 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "10에",
+          "케이스로워판넬에는",
+          "체결부가",
+          "형성된",
+          "주변",
+          "지점에서"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 2,
-        "pdf_name": "",
-        "uploaded": false,
-        "page_number": 0,
-        "matched_passage": "",
-        "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "pdf_name": "동희산업 인용발명2 10 2445905호.pdf",
+        "uploaded": true,
+        "page_number": 5,
+        "matched_passage": "청구항 13 \n제1항에 있어서,\n상기 제1 내부 돌출프레임부에는 차체에 상기 전기자동차용 배터리 케이스를 고정시키기 위한 마운팅 결합홀이\n형성되고, 상기 돌출플레이트부에는 마운팅 결합홀에 대향되어 마운팅 결합부가 형성된 것을 특징으로 하는 전\n기자동차용 배터리 케이스.",
+        "overlap_keywords": [
+          "있어서",
+          "형성된",
+          "제1"
+        ],
+        "missing_keywords": [
+          "10에",
+          "케이스로워판넬에는",
+          "체결부가",
+          "주변",
+          "지점에서",
+          "상방으로"
+        ],
+        "difference_summary": "인용발명 2에서 유사한 문단을 찾았지만 청구항 핵심어 10에, 케이스로워판넬에는, 체결부가, 주변, 지점에서, 상방으로는 직접 확인되지 않았습니다."
       }
     ]
   },
@@ -247,13 +295,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "10에",
+          "있어서",
+          "냉각판넬의",
+          "하면에",
+          "케이스로워판넬",
+          "냉각판넬을"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 3,
@@ -281,13 +336,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "12에",
+          "컵와셔에는",
+          "언더커버의",
+          "외측에서",
+          "상방으로",
+          "절곡된"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 3,
@@ -315,13 +377,13 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
         "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 4,
@@ -359,13 +421,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "14에",
+          "케이스어퍼판넬에",
+          "면착된",
+          "체결파이프를",
+          "고정하도록",
+          "케이스어퍼판넬의"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 4,
@@ -393,13 +462,20 @@
     "cited_details": [
       {
         "invention_no": 1,
-        "pdf_name": "",
-        "uploaded": false,
+        "pdf_name": "동희산업 인용발명1 10-2024-0020901.pdf",
+        "uploaded": true,
         "page_number": 0,
         "matched_passage": "",
         "overlap_keywords": [],
-        "missing_keywords": [],
-        "difference_summary": "해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다."
+        "missing_keywords": [
+          "1에",
+          "체결파이프의",
+          "내부에는",
+          "중공을",
+          "형성하는",
+          "관통홀부가"
+        ],
+        "difference_summary": "인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다."
       },
       {
         "invention_no": 4,

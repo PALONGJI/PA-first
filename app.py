@@ -26,6 +26,9 @@ KOREAN_FONT_CANDIDATES = [
     Path(r"C:\Windows\Fonts\malgun.ttf"),
     Path(r"C:\Windows\Fonts\malgunbd.ttf"),
 ]
+CLAIM_HEADING_PATTERN = re.compile(
+    r"(?m)^[ \t　]*(?:【\s*청구항\s*(\d+)\s*】|\[\s*청구항\s*(\d+)\s*\]|청구항\s*(\d+))[ \t　]*$"
+)
 
 
 @dataclass
@@ -225,6 +228,11 @@ def extract_keywords(text: str) -> List[str]:
         "부재",
         "장치",
         "방법",
+        "있어서",
+        "것을",
+        "특징으로",
+        "배터리",
+        "케이스",
     }
     words = re.findall(r"[0-9A-Za-z가-힣]{2,}", normalize_for_compare(text))
     ranked: List[str] = []
@@ -249,15 +257,39 @@ def split_text_passages(text: str) -> List[str]:
     return passages
 
 
+def is_boilerplate_passage(text: str) -> bool:
+    compact = re.sub(r"\s+", "", text)
+    boilerplate_markers = (
+        "CPC특허분류",
+        "출원번호",
+        "출원일자",
+        "심사청구일자",
+        "출원인",
+        "발명자",
+        "대리인",
+        "전체청구항수",
+        "발명의명칭",
+        "요약",
+    )
+    marker_count = sum(1 for marker in boilerplate_markers if marker in compact)
+    if marker_count >= 2:
+        return True
+    if "Cl.)" in text and re.search(r"\(\d{2}\)\s*(출원번호|출원일자|출원인|발명자)", text):
+        return True
+    return False
+
+
 def find_best_passage(claim_text: str, pdf_pages: List[str]) -> tuple[str, int, List[str], List[str]]:
     claim_keywords = extract_keywords(claim_text)[:12]
     best_passage = ""
     best_page = 0
     best_overlap: List[str] = []
-    best_score = -1
+    best_score = 0
 
     for page_no, page_text in enumerate(pdf_pages, start=1):
         for passage in split_text_passages(page_text):
+            if is_boilerplate_passage(passage):
+                continue
             passage_keywords = set(extract_keywords(passage))
             overlap = [keyword for keyword in claim_keywords if keyword in passage_keywords]
             score = len(overlap)
@@ -266,6 +298,10 @@ def find_best_passage(claim_text: str, pdf_pages: List[str]) -> tuple[str, int, 
                 best_passage = passage
                 best_page = page_no
                 best_overlap = overlap
+
+    if best_score < 2:
+        missing = claim_keywords[:6]
+        return "", 0, [], missing
 
     missing = [keyword for keyword in claim_keywords if keyword not in best_overlap][:6]
     return best_passage, best_page, best_overlap[:6], missing
@@ -437,9 +473,9 @@ def extract_claim_texts(spec_pdf: Path) -> Dict[int, ClaimEntry]:
 
     for page_index in range(doc.page_count):
         text = doc.load_page(page_index).get_text("text")
-        matches = list(re.finditer(r"【?청구항\s*(\d+)】?", text))
+        matches = list(CLAIM_HEADING_PATTERN.finditer(text))
         for idx, match in enumerate(matches):
-            claim_no = int(match.group(1))
+            claim_no = int(next(group for group in match.groups() if group))
             end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
             claim_text = clean_text_block(text[match.start():end])
             records[claim_no] = ClaimEntry(
@@ -612,69 +648,83 @@ def build_html_report(
     opinion_href = Path(os.path.relpath(source_opinion_pdf, output_dir)).as_posix()
     cited_pdf_map = cited_pdf_map or {}
     cited_links = [
-        (number, Path(os.path.relpath(path, output_dir)).as_posix(), path.name)
+        (number, Path(os.path.relpath(path, output_dir)).as_posix())
         for number, path in sorted(cited_pdf_map.items())
     ]
 
-    claim_cards: List[str] = []
-    sidebar_items: List[str] = []
-    table_rows: List[str] = []
+    total_claims = len(claim_entries)
+    rejected_count = len(rejected_claims)
+    allowed_count = len(allowed_claims)
+    pending_count = max(0, total_claims - rejected_count - allowed_count)
+    rejected_ratio = round((rejected_count / total_claims) * 100) if total_claims else 0
+    allowed_ratio = round((allowed_count / total_claims) * 100) if total_claims else 0
+    pending_ratio = max(0, 100 - rejected_ratio - allowed_ratio)
 
+    def status_class(status: str) -> str:
+        if status == "거절이유":
+            return "is-rejected"
+        if status == "특허 가능":
+            return "is-allowed"
+        return "is-pending"
+
+    table_rows: List[str] = []
+    claim_blocks: List[str] = []
     for claim_no in sorted(claim_entries):
         entry = claim_entries[claim_no]
-        badge_class = "rejected" if entry.status == "거절이유" else "allowed"
+        badge_class = status_class(entry.status)
         cited_text = ", ".join(str(value) for value in entry.cited_inventions) or "-"
-
-        sidebar_items.append(
-            f"""
-            <a class="nav-item" href="#claim-{entry.claim_no}">
-              <span class="nav-icon">{entry.claim_no}</span>
-              <span>청구항 {entry.claim_no}</span>
-            </a>
-            """
-        )
 
         table_rows.append(
             f"""
-            <tr>
-              <td>청구항 {entry.claim_no}</td>
-              <td><span class="badge {badge_class}">{html.escape(entry.status)}</span></td>
+            <tr class="{badge_class}">
+              <td><a href="#claim-{entry.claim_no}">청구항 {entry.claim_no}</a></td>
+              <td><span class="status-badge {badge_class}">{html.escape(entry.status)}</span></td>
               <td>{entry.page_number}</td>
               <td>{html.escape(cited_text)}</td>
+              <td>{html.escape(entry.short_reason or "-")}</td>
             </tr>
             """
         )
 
-        cited_sections: List[str] = []
+        cited_panels: List[str] = []
         for detail in entry.cited_details:
             overlap = ", ".join(str(value) for value in detail["overlap_keywords"]) or "-"
             missing = ", ".join(str(value) for value in detail["missing_keywords"]) or "-"
-            uploaded_text = "업로드 완료" if detail["uploaded"] else "미업로드"
+            uploaded_text = "업로드됨" if detail["uploaded"] else "미업로드"
             matched_passage = html.escape(str(detail["matched_passage"]) or "관련 본문을 찾지 못했습니다.")
-            cited_sections.append(
+            cited_panels.append(
                 f"""
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 {detail["invention_no"]} 비교</h4>
-                  <p class="cited-meta">{uploaded_text} · 페이지 {detail["page_number"] or "-"}</p>
-                  <p class="card-summary">{html.escape(str(detail["difference_summary"]))}</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> {html.escape(overlap)}</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> {html.escape(missing)}</p>
+                  <div class="detail-head">
+                    <h4>인용발명 {detail["invention_no"]}</h4>
+                    <span>{uploaded_text} · 페이지 {detail["page_number"] or "-"}</span>
+                  </div>
+                  <p>{html.escape(str(detail["difference_summary"]))}</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>{html.escape(overlap)}</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>{html.escape(missing)}</dd></div>
+                  </dl>
                   <pre>{matched_passage}</pre>
                 </section>
                 """
             )
 
-        claim_cards.append(
+        claim_blocks.append(
             f"""
-            <article class="claim-card" id="claim-{entry.claim_no}">
-              <div class="claim-card-top">
-                <div class="claim-chip">#{entry.claim_no}</div>
-                <span class="badge {badge_class}">{html.escape(entry.status)}</span>
+            <article class="claim-card {badge_class}" id="claim-{entry.claim_no}">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow {badge_class}">청구항 {entry.claim_no}</span>
+                  <h3>{html.escape(entry.short_reason or entry.status)}</h3>
+                </div>
+                <span class="status-badge {badge_class}">{html.escape(entry.status)}</span>
               </div>
-              <h3>청구항 {entry.claim_no}</h3>
-              <p class="card-sub">페이지 {entry.page_number} · 인용발명 {html.escape(cited_text)}</p>
-              <p class="card-summary">{html.escape(entry.short_reason)}</p>
-              <details class="detail-box" {'open' if entry.status == '거절이유' else ''}>
+              <div class="claim-meta">
+                <span>페이지 {entry.page_number}</span>
+                <span>인용발명 {html.escape(cited_text)}</span>
+                <span>{html.escape(LAW_TEXT)}</span>
+              </div>
+              <details {'open' if entry.status == '거절이유' else ''}>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -685,645 +735,528 @@ def build_html_report(
                     <h4>거절이유 / 심사의견</h4>
                     <pre>{html.escape(entry.full_reason)}</pre>
                   </section>
-                  {"".join(cited_sections)}
+                  {"".join(cited_panels)}
                 </div>
               </details>
             </article>
             """
         )
 
+    table_groups: List[str] = []
+    for index in range(0, len(table_rows), 10):
+        group_rows = table_rows[index:index + 10]
+        group_start = index + 1
+        group_end = min(index + len(group_rows), len(table_rows))
+        table_groups.append(
+            f"""
+            <section class="table-block">
+              <h3>청구항 {group_start}-{group_end}</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>청구항</th>
+                      <th>상태</th>
+                      <th>페이지</th>
+                      <th>인용발명</th>
+                      <th>요약</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {"".join(group_rows)}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            """
+        )
+
+    cited_link_blocks = "".join(
+        f'<a href="{html.escape(href)}">인용발명 {number}</a>'
+        for number, href in cited_links
+    )
+
     html_text = f"""<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>청구항 분석 결과</title>
+  <title>거절이유 청구항 분석</title>
   <style>
     :root {{
-      --bg: #f5f7ff;
+      --bg: #f3f6fa;
       --panel: #ffffff;
-      --ink: #28304a;
-      --muted: #7b84a3;
-      --line: #e8ebf7;
-      --accent: #6d7cff;
-      --accent-soft: #eef1ff;
-      --accent-deep: #4d5de0;
-      --reject: #ff8b6b;
-      --reject-bg: #fff2ed;
-      --allow: #23b98f;
-      --allow-bg: #ebfff8;
-      --shadow: 0 18px 40px rgba(102, 118, 191, 0.12);
+      --ink: #1f2a37;
+      --muted: #697586;
+      --line: #dde5ee;
+      --accent: #176c63;
+      --accent-soft: #e8f6f3;
+      --reject: #a71919;
+      --reject-soft: #ffdede;
+      --reject-row: #fff1f1;
+      --allow: #08733d;
+      --allow-soft: #d9f7e5;
+      --allow-row: #effbf4;
+      --pending: #7a5a13;
+      --pending-soft: #fff7df;
+      --shadow: 0 18px 42px rgba(31, 42, 55, 0.10);
     }}
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
-      background:
-        linear-gradient(180deg, #eef2ff 0%, #f8f9ff 180px, var(--bg) 100%);
-      font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      background: var(--bg);
       color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
     }}
     a {{ color: inherit; }}
-    .topbar {{
-      height: 74px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      border-bottom: 1px solid rgba(255,255,255,0.45);
-      position: sticky;
-      top: 0;
-      background: rgba(245, 247, 255, 0.86);
-      backdrop-filter: blur(16px);
-      z-index: 10;
-    }}
-    .brand {{
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      font-weight: 800;
-      font-size: 22px;
-    }}
-    .brand-badge {{
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--accent), #8ea0ff);
-      color: white;
-      display: grid;
-      place-items: center;
-      font-size: 14px;
-      box-shadow: 0 12px 24px rgba(109, 124, 255, 0.35);
-    }}
-    .searchbar {{
-      width: min(560px, 45vw);
-      display: flex;
-      align-items: center;
-      border: 1px solid #dfe4ff;
-      border-radius: 999px;
-      overflow: hidden;
-      background: rgba(255,255,255,0.95);
-      box-shadow: 0 8px 24px rgba(134, 147, 206, 0.12);
-    }}
-    .searchbar input {{
-      width: 100%;
-      border: 0;
-      padding: 14px 18px;
-      font-size: 15px;
-      outline: none;
-      color: #6b7391;
-      background: transparent;
-    }}
-    .search-action {{
-      width: 62px;
-      height: 50px;
-      border-left: 1px solid #e5e9ff;
-      background: #f7f8ff;
-      display: grid;
-      place-items: center;
-      color: var(--accent);
-    }}
-    .layout {{
-      display: grid;
-      grid-template-columns: 210px minmax(0, 1fr);
-      gap: 28px;
-      padding: 24px;
-    }}
-    aside {{
-      position: sticky;
-      top: 98px;
-      align-self: start;
-      background: rgba(255,255,255,0.75);
-      border: 1px solid rgba(255,255,255,0.8);
-      box-shadow: var(--shadow);
-      border-radius: 26px;
-      padding: 20px 14px;
-      backdrop-filter: blur(12px);
-    }}
-    .side-group {{
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 16px;
-    }}
-    .side-title {{
-      font-size: 15px;
-      font-weight: 700;
-      margin: 0 0 10px;
-      padding: 0 12px;
-    }}
-    .nav-item {{
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      margin-bottom: 4px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 700;
-    }}
-    .nav-item:hover {{
-      background: var(--accent-soft);
-      color: var(--accent-deep);
-    }}
-    .nav-icon {{
-      width: 28px;
-      height: 28px;
-      border-radius: 10px;
-      background: var(--accent-soft);
-      color: var(--accent-deep);
-      display: grid;
-      place-items: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex: 0 0 auto;
-    }}
-    main {{
-      display: grid;
-      gap: 18px;
+    .shell {{
+      min-height: 100vh;
     }}
     .hero {{
+      background: linear-gradient(135deg, #17212f 0%, #176c63 100%);
+      color: white;
+      padding: 30px 24px 86px;
+    }}
+    .hero-inner, .content {{
+      max-width: 1240px;
+      margin: 0 auto;
+    }}
+    .topline {{
       display: flex;
       justify-content: space-between;
-      gap: 20px;
       align-items: flex-start;
-      padding: 8px 6px 10px;
+      gap: 16px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
     }}
-    .hero h1 {{
-      margin: 0 0 10px;
-      font-size: 30px;
-      line-height: 1.2;
+    .brand {{
+      font-size: 18px;
+      font-weight: 800;
     }}
-    .hero p {{
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.55;
-      max-width: 760px;
-    }}
-    .links {{
+    .quick-links {{
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-top: 16px;
+      justify-content: flex-end;
     }}
-    .links a {{
+    .quick-links a {{
       text-decoration: none;
-      background: var(--panel);
-      color: var(--accent-deep);
-      border: 1px solid #dde3ff;
-      padding: 10px 14px;
-      border-radius: 999px;
-      box-shadow: 0 8px 18px rgba(121, 135, 200, 0.1);
-      font-size: 14px;
-      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 400;
     }}
-    .hero-side {{
-      min-width: 280px;
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border-radius: 24px;
-      padding: 16px;
-      border: 1px solid #edf0ff;
-      box-shadow: var(--shadow);
-    }}
-    .hero-side h3 {{
+    h1 {{
       margin: 0 0 12px;
+      font-size: 40px;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }}
+    .hero p {{
+      margin: 0;
+      max-width: 760px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.82);
+    }}
+    .hero-tools {{
+      display: grid;
+      gap: 12px;
+      justify-items: end;
+      min-width: 340px;
+      max-width: 520px;
+    }}
+    .distribution-card {{
+      width: 100%;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.24);
+      border-radius: 8px;
+      padding: 14px;
+      color: white;
+    }}
+    .distribution-card h2 {{
+      margin: 0 0 10px;
       font-size: 16px;
     }}
-    .hero-side p {{
-      margin: 0 0 10px;
-      font-size: 14px;
-      color: var(--muted);
-    }}
-    .chips {{
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding: 0 4px 8px;
-    }}
-    .chip {{
-      padding: 10px 14px;
-      border-radius: 10px;
-      background: #ffffff;
-      border: 1px solid #e7ebff;
-      white-space: nowrap;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-    }}
-    .chip.active {{
-      background: linear-gradient(135deg, var(--accent), #8ea0ff);
-      color: white;
-      border-color: transparent;
-      box-shadow: 0 12px 24px rgba(109, 124, 255, 0.28);
+    .content {{
+      margin-top: -56px;
+      padding: 0 24px 44px;
     }}
     .stats {{
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
     }}
-    .stat {{
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border: 1px solid #edf0ff;
-      border-radius: 24px;
-      padding: 20px;
+    .stat-card, .panel, .claim-card {{
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.85);
+      border-radius: 8px;
       box-shadow: var(--shadow);
     }}
-    .stat h3 {{
-      margin: 0 0 8px;
-      font-size: 18px;
+    .stat-card {{
+      padding: 18px;
     }}
-    .stat p {{
-      margin: 0;
+    .stat-card span {{
+      display: block;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }}
+    .stat-card strong {{
+      display: block;
+      font-size: 30px;
+      line-height: 1;
     }}
     .dashboard-grid {{
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 18px;
+      display: block;
     }}
-    .badge {{
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-    }}
-    .badge.rejected {{ color: var(--reject); background: var(--reject-bg); }}
-    .badge.allowed {{ color: var(--allow); background: var(--allow-bg); }}
     .panel {{
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border: 1px solid #edf0ff;
-      border-radius: 24px;
       padding: 20px;
-      box-shadow: var(--shadow);
-      min-width: 0;
+    }}
+    .panel-head {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 6px;
     }}
     .panel h2 {{
-      margin: 0 0 14px;
-      font-size: 17px;
+      margin: 0;
+      font-size: 20px;
     }}
-    .chart-card {{
-      min-height: 280px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }}
-    .profit {{
-      font-size: 28px;
+    .status-badge {{
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
       font-weight: 800;
-      margin: 4px 0 0;
-      color: var(--accent-deep);
+      white-space: nowrap;
     }}
-    .chart-area {{
-      height: 150px;
-      margin-top: 12px;
-      border-radius: 18px;
-      background:
-        linear-gradient(180deg, rgba(109,124,255,0.12), rgba(109,124,255,0.02)),
-        repeating-linear-gradient(to right, transparent 0, transparent 46px, rgba(213,219,255,0.65) 46px, rgba(213,219,255,0.65) 47px),
-        repeating-linear-gradient(to top, transparent 0, transparent 36px, rgba(232,235,247,0.85) 36px, rgba(232,235,247,0.85) 37px);
-      position: relative;
-      overflow: hidden;
+    .is-rejected {{ color: var(--reject); background: var(--reject-soft); }}
+    .is-allowed {{ color: var(--allow); background: var(--allow-soft); }}
+    .is-pending {{ color: var(--pending); background: var(--pending-soft); }}
+    tr.is-rejected {{
+      background: var(--reject-row);
+      border-left: 4px solid var(--reject);
     }}
-    .chart-line {{
-      position: absolute;
-      inset: 18px 16px 20px;
+    tr.is-allowed {{
+      background: var(--allow-row);
+      border-left: 4px solid var(--allow);
     }}
-    .chart-line svg {{
-      width: 100%;
-      height: 100%;
+    tr.is-rejected td:first-child,
+    tr.is-rejected td:first-child a {{
+      color: var(--reject);
     }}
-    .mini-list {{
+    tr.is-allowed td:first-child,
+    tr.is-allowed td:first-child a {{
+      color: var(--allow);
+    }}
+    tr.is-rejected .status-badge,
+    tr.is-allowed .status-badge {{
+      color: white;
+    }}
+    tr.is-rejected .status-badge {{
+      background: var(--reject);
+    }}
+    tr.is-allowed .status-badge {{
+      background: var(--allow);
+    }}
+    .chart {{
       display: grid;
       gap: 12px;
+      margin-top: 8px;
     }}
-    .mini-row {{
+    .bar {{
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #edf1f5;
       display: grid;
-      grid-template-columns: 28px 1fr auto;
-      gap: 10px;
-      align-items: center;
-      color: var(--muted);
-      font-size: 14px;
+      grid-template-columns: {rejected_ratio}fr {allowed_ratio}fr {pending_ratio}fr;
     }}
-    .dot {{
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 6px rgba(109,124,255,0.12);
-    }}
-    .pie-card {{
-      display: grid;
-      place-items: center;
-      min-height: 280px;
-    }}
-    .pie {{
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      background: conic-gradient(#7a5cff 0 42%, #ffca63 42% 66%, #19c7c7 66% 81%, #57d68d 81% 92%, #cdd3f5 92% 100%);
-      position: relative;
-      margin: 10px auto 18px;
-      box-shadow: 0 16px 34px rgba(122, 92, 255, 0.18);
-    }}
-    .pie::after {{
-      content: "";
-      position: absolute;
-      inset: 42px;
-      background: white;
-      border-radius: 50%;
-    }}
+    .bar span:nth-child(1) {{ background: var(--reject); }}
+    .bar span:nth-child(2) {{ background: var(--allow); }}
+    .bar span:nth-child(3) {{ background: #d6a536; }}
     .legend {{
-      width: 100%;
       display: grid;
-      gap: 10px;
-      font-size: 14px;
-      color: var(--muted);
+      gap: 7px;
+      color: rgba(255,255,255,0.78);
+      font-size: 13px;
     }}
     .legend-row {{
       display: flex;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
     }}
-    .legend-label {{
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .table-wrap {{
+      overflow-x: auto;
+      margin-top: 14px;
     }}
-    .legend-swatch {{
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
+    .table-split-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
     }}
-    .summary-card {{
-      margin: 0;
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border: 1px solid #edf0ff;
-      border-radius: 24px;
-      padding: 20px;
-      box-shadow: var(--shadow);
+    .table-block {{
+      min-width: 0;
     }}
-    .summary-card p {{
-      margin: 0 0 8px;
+    .table-block h3 {{
+      margin: 0 0 10px;
+      font-size: 16px;
       color: var(--muted);
-      line-height: 1.55;
     }}
-    .table-card table {{
+    table {{
       width: 100%;
       border-collapse: collapse;
+      min-width: 640px;
       font-size: 14px;
     }}
-    .table-card th, .table-card td {{
+    th, td {{
       padding: 12px 10px;
       border-bottom: 1px solid var(--line);
       text-align: left;
+      vertical-align: top;
     }}
-    .table-card th {{
+    th {{
       color: var(--muted);
-      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
     }}
-    .claim-grid {{
+    td a {{
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }}
+    .claim-list {{
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
+      gap: 14px;
+      margin-top: 18px;
     }}
     .claim-card {{
-      background: linear-gradient(180deg, #ffffff, #fbfcff);
-      border: 1px solid #edf0ff;
-      border-radius: 22px;
       padding: 18px;
-      box-shadow: var(--shadow);
+      scroll-margin-top: 18px;
+      border-left: 5px solid transparent;
     }}
-    .claim-card-top {{
+    .claim-card.is-rejected {{
+      border-left-color: var(--reject);
+    }}
+    .claim-card.is-allowed {{
+      border-left-color: var(--allow);
+    }}
+    .claim-card.is-pending {{
+      border-left-color: var(--pending);
+    }}
+    .claim-card-head {{
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 14px;
+      align-items: flex-start;
       margin-bottom: 12px;
     }}
-    .claim-chip {{
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
+    .eyebrow {{
+      display: inline-flex;
+      color: var(--accent);
       background: var(--accent-soft);
-      color: var(--accent-deep);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
       font-weight: 800;
+      margin-bottom: 9px;
+    }}
+    .eyebrow.is-rejected {{
+      color: white;
+      background: var(--reject);
+    }}
+    .eyebrow.is-allowed {{
+      color: white;
+      background: var(--allow);
+    }}
+    .eyebrow.is-pending {{
+      color: white;
+      background: var(--pending);
     }}
     .claim-card h3 {{
-      margin: 0 0 8px;
-      font-size: 19px;
-    }}
-    .card-sub, .card-summary {{
       margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 17px;
+      line-height: 1.45;
     }}
-    .card-summary {{
-      margin-top: 8px;
-      color: #4d5677;
+    .claim-meta {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
     }}
-    .detail-box {{
-      margin-top: 14px;
-      background: #fafbff;
+    .claim-meta span {{
       border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 12px 14px;
+      border-radius: 999px;
+      padding: 6px 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }}
+    details {{
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }}
+    summary {{
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: 800;
+      list-style: none;
+    }}
+    summary::-webkit-details-marker {{
+      display: none;
     }}
     .detail-grid {{
       display: grid;
-      grid-template-columns: 1fr;
       gap: 12px;
       margin-top: 12px;
     }}
     .detail-panel {{
-      background: white;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 8px;
       padding: 14px;
+      background: #fbfdff;
+      color: var(--ink);
     }}
     .detail-panel h4 {{
       margin: 0 0 10px;
       font-size: 14px;
+      color: var(--ink);
     }}
-    .cited-panel {{
-      background: #f8fbff;
-    }}
-    .cited-meta, .keyword-line {{
-      margin: 0 0 8px;
+    .detail-panel p {{
+      margin: 0 0 10px;
       color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }}
+    .detail-head {{
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }}
+    .detail-head span {{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }}
+    .meta-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }}
+    .meta-grid div {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: white;
+    }}
+    .meta-grid dt {{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }}
+    .meta-grid dd {{
+      margin: 0;
       font-size: 13px;
       line-height: 1.5;
     }}
     pre {{
+      margin: 0;
+      padding: 12px;
       white-space: pre-wrap;
       word-break: keep-all;
-      background: #ffffff;
-      border: 1px solid #efefef;
-      border-radius: 14px;
-      padding: 12px;
-      font-family: "Consolas", monospace;
+      color: var(--ink);
+      background: white;
+      border: 1px solid #edf1f5;
+      border-radius: 8px;
+      font-family: Consolas, monospace;
       font-size: 12px;
-      line-height: 1.55;
+      line-height: 1.6;
     }}
-    details summary {{
-      cursor: pointer;
-      color: var(--accent-deep);
-      font-weight: 700;
-      list-style: none;
-    }}
-    @media (max-width: 1280px) {{
-      .dashboard-grid {{ grid-template-columns: 1fr 1fr; }}
-      .claim-grid {{ grid-template-columns: 1fr; }}
-    }}
-    @media (max-width: 1024px) {{
-      .layout {{ grid-template-columns: 1fr; }}
-      aside {{ position: static; }}
-      .stats {{ grid-template-columns: 1fr; }}
-      .hero {{ flex-direction: column; }}
-      .dashboard-grid {{ grid-template-columns: 1fr; }}
-    }}
-    @media (max-width: 720px) {{
-      .topbar {{ padding: 0 14px; gap: 12px; }}
-      .brand {{ font-size: 20px; }}
-      .searchbar {{ width: 100%; }}
-      .layout {{ padding: 14px; }}
-      .claim-grid {{ grid-template-columns: 1fr; }}
+    @media (max-width: 960px) {{
+      .stats, .table-split-grid {{ grid-template-columns: 1fr; }}
+      h1 {{ font-size: 32px; }}
+      .content {{ padding: 0 16px 34px; }}
+      .hero {{ padding-left: 16px; padding-right: 16px; }}
+      .meta-grid {{ grid-template-columns: 1fr; }}
+      .hero-tools {{
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        justify-items: stretch;
+      }}
+      .quick-links {{
+        justify-content: flex-start;
+      }}
     }}
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-badge">▣</span>
-      <span>Claim Analysis</span>
-    </div>
-    <div class="searchbar">
-      <input value="청구항 분석 현황" readonly>
-      <div class="search-action">⌕</div>
-    </div>
-    <div class="badge allowed">청구항 분석</div>
-  </header>
-
-  <div class="layout">
-    <aside>
-      <div class="side-group">
-        <div class="side-title">바로가기</div>
-        <a class="nav-item" href="{html.escape(annotated_href)}"><span class="nav-icon">PDF</span><span>표시된 PDF</span></a>
-        <a class="nav-item" href="{html.escape(spec_href)}"><span class="nav-icon">명</span><span>원본 명세서</span></a>
-        <a class="nav-item" href="{html.escape(opinion_href)}"><span class="nav-icon">의</span><span>원본 의견제출</span></a>
-        {"".join(f'<a class="nav-item" href="{html.escape(href)}"><span class="nav-icon">C{number}</span><span>인용발명 {number}</span></a>' for number, href, _ in cited_links)}
-      </div>
-      <div class="side-group">
-        <div class="side-title">청구항 이동</div>
-        {"".join(sidebar_items)}
-      </div>
-    </aside>
-
-    <main>
-      <section class="hero">
-        <div>
-          <h1>청구항 분석 대시보드</h1>
-          <p>의견제출통지서의 거절이유를 기준으로 명세서 청구항을 한 화면에서 관리할 수 있도록 요약 위젯, 상태표, 청구항 상세 카드로 재구성했습니다.</p>
-          <div class="links">
-            <a href="{html.escape(annotated_href)}">분석 PDF 열기</a>
-            <a href="{html.escape(spec_href)}">명세서 PDF</a>
-            <a href="{html.escape(opinion_href)}">의견제출 PDF</a>
-            {"".join(f'<a href="{html.escape(href)}">인용발명 {number} PDF</a>' for number, href, _ in cited_links)}
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="topline">
+          <div class="brand">거절이유 청구항 분석</div>
+          <div class="hero-tools">
+            <nav class="quick-links">
+              <a href="{html.escape(annotated_href)}">분석 PDF</a>
+              <a href="{html.escape(spec_href)}">명세서</a>
+              <a href="{html.escape(opinion_href)}">의견제출통지서</a>
+              {cited_link_blocks}
+            </nav>
+            <aside class="distribution-card">
+              <h2>상태 분포</h2>
+              <div class="chart">
+                <div class="bar" aria-label="청구항 상태 분포">
+                  <span></span><span></span><span></span>
+                </div>
+                <div class="legend">
+                  <div class="legend-row"><span>거절이유</span><strong>{rejected_count}건 · {rejected_ratio}%</strong></div>
+                  <div class="legend-row"><span>특허 가능</span><strong>{allowed_count}건 · {allowed_ratio}%</strong></div>
+                  <div class="legend-row"><span>미분류</span><strong>{pending_count}건 · {pending_ratio}%</strong></div>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
-        <section class="hero-side">
-          <h3>분석 요약</h3>
-          <p>거절이유 청구항: {", ".join(str(v) for v in rejected_claims)}</p>
-          <p>특허 가능 청구항: {", ".join(str(v) for v in allowed_claims)}</p>
-          <p>업로드된 인용발명 PDF: {", ".join(str(number) for number, _, _ in cited_links) or "없음"}</p>
-          <p>관련 법조항: {LAW_TEXT}</p>
-        </section>
-      </section>
-
-      <div class="chips">
-        <div class="chip active">전체</div>
-        <div class="chip">진보성 거절</div>
-        <div class="chip">특허 가능</div>
-        <div class="chip">청구항 표</div>
-        <div class="chip">상세 카드</div>
+        <h1>거절이유 청구항 분석</h1>
+        <p>의견제출통지서의 청구항 상태와 거절이유를 기준으로, 청구항별 쟁점과 인용발명 대응 내용을 한 화면에서 검토할 수 있도록 정리했습니다.</p>
       </div>
+    </section>
 
-      <section class="stats">
-        <div class="stat"><h3>거절이유 청구항</h3><p>{", ".join(str(v) for v in rejected_claims)}</p></div>
-        <div class="stat"><h3>특허 가능 청구항</h3><p>{", ".join(str(v) for v in allowed_claims)}</p></div>
-        <div class="stat"><h3>관련 법조항</h3><p>{LAW_TEXT}</p></div>
+    <main class="content">
+      <section class="stats" aria-label="분석 요약">
+        <div class="stat-card"><span>전체 청구항</span><strong>{total_claims}</strong></div>
+        <div class="stat-card"><span>거절이유</span><strong>{rejected_count}</strong></div>
+        <div class="stat-card"><span>특허 가능</span><strong>{allowed_count}</strong></div>
+        <div class="stat-card"><span>인용발명 PDF</span><strong>{len(cited_links)}</strong></div>
       </section>
 
       <section class="dashboard-grid">
-        <section class="panel chart-card">
-          <div>
-            <h2>청구항 처리 현황</h2>
-            <p class="profit">{len(rejected_claims)} / {len(claim_entries)} 지적</p>
-          </div>
-          <div class="chart-area">
-            <div class="chart-line">
-              <svg viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
-                <path d="M0,78 C30,76 44,70 63,64 C84,57 102,70 121,54 C143,35 165,42 187,28 C214,12 238,22 260,18 C276,15 288,18 300,12" fill="none" stroke="#6d7cff" stroke-width="4" stroke-linecap="round"/>
-              </svg>
-            </div>
-          </div>
-        </section>
-
         <section class="panel">
-          <h2>핵심 포인트</h2>
-          <div class="mini-list">
-            <div class="mini-row"><span class="dot"></span><span>진보성 거절 중심</span><strong>{len(rejected_claims)}건</strong></div>
-            <div class="mini-row"><span class="dot" style="background:#23b98f; box-shadow:0 0 0 6px rgba(35,185,143,0.12)"></span><span>특허 가능 청구항</span><strong>{len(allowed_claims)}건</strong></div>
-            <div class="mini-row"><span class="dot" style="background:#ffb14a; box-shadow:0 0 0 6px rgba(255,177,74,0.12)"></span><span>검토 총 청구항</span><strong>{len(claim_entries)}건</strong></div>
+          <div class="panel-head">
+            <h2>청구항 상태표</h2>
+            <span class="status-badge is-rejected">거절이유 {rejected_count}건</span>
           </div>
-        </section>
-
-        <section class="panel pie-card">
-          <div>
-            <h2>상태 비율</h2>
-            <div class="pie"></div>
-            <div class="legend">
-              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#7a5cff"></span>거절이유</span><span>{len(rejected_claims)}</span></div>
-              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#57d68d"></span>특허 가능</span><span>{len(allowed_claims)}</span></div>
-              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#cdd3f5"></span>기타</span><span>{max(0, len(claim_entries)-len(rejected_claims)-len(allowed_claims))}</span></div>
-            </div>
+          <div class="table-split-grid">
+            {"".join(table_groups)}
           </div>
         </section>
       </section>
 
-      <section class="dashboard-grid">
-        <section class="panel table-card">
-          <h2>청구항 상태표</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>청구항</th>
-                <th>상태</th>
-                <th>페이지</th>
-                <th>인용발명</th>
-              </tr>
-            </thead>
-            <tbody>
-              {"".join(table_rows)}
-            </tbody>
-          </table>
-        </section>
-
-        <section class="summary-card">
-          <h2 style="margin:0 0 14px; font-size:17px;">표시 기준</h2>
-          <p>주황 배지는 의견제출통지서에서 진보성 거절이유가 지적된 청구항입니다.</p>
-          <p>초록 배지는 의견제출 시점 기준 특허 가능 청구항입니다.</p>
-          <p>아래 카드에서 각 청구항의 원문과 심사의견 전문을 확인할 수 있습니다.</p>
-        </section>
-      </section>
-
-      <section class="claim-grid">
-        {"".join(claim_cards)}
+      <section class="claim-list" aria-label="청구항 상세">
+        {"".join(claim_blocks)}
       </section>
     </main>
   </div>
@@ -1333,7 +1266,6 @@ def build_html_report(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html_text, encoding="utf-8")
-
 
 def write_json(output_path: Path, claim_entries: Dict[int, ClaimEntry]) -> None:
     payload = [asdict(claim_entries[key]) for key in sorted(claim_entries)]

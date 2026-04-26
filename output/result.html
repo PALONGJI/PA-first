@@ -3,858 +3,680 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>청구항 분석 결과</title>
+  <title>거절이유 청구항 분석</title>
   <style>
     :root {
-      --bg: #f5f7ff;
+      --bg: #f3f6fa;
       --panel: #ffffff;
-      --ink: #28304a;
-      --muted: #7b84a3;
-      --line: #e8ebf7;
-      --accent: #6d7cff;
-      --accent-soft: #eef1ff;
-      --accent-deep: #4d5de0;
-      --reject: #ff8b6b;
-      --reject-bg: #fff2ed;
-      --allow: #23b98f;
-      --allow-bg: #ebfff8;
-      --shadow: 0 18px 40px rgba(102, 118, 191, 0.12);
+      --ink: #1f2a37;
+      --muted: #697586;
+      --line: #dde5ee;
+      --accent: #176c63;
+      --accent-soft: #e8f6f3;
+      --reject: #a71919;
+      --reject-soft: #ffdede;
+      --reject-row: #fff1f1;
+      --allow: #08733d;
+      --allow-soft: #d9f7e5;
+      --allow-row: #effbf4;
+      --pending: #7a5a13;
+      --pending-soft: #fff7df;
+      --shadow: 0 18px 42px rgba(31, 42, 55, 0.10);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background:
-        linear-gradient(180deg, #eef2ff 0%, #f8f9ff 180px, var(--bg) 100%);
-      font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      background: var(--bg);
       color: var(--ink);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
     }
     a { color: inherit; }
-    .topbar {
-      height: 74px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      border-bottom: 1px solid rgba(255,255,255,0.45);
-      position: sticky;
-      top: 0;
-      background: rgba(245, 247, 255, 0.86);
-      backdrop-filter: blur(16px);
-      z-index: 10;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      font-weight: 800;
-      font-size: 22px;
-    }
-    .brand-badge {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--accent), #8ea0ff);
-      color: white;
-      display: grid;
-      place-items: center;
-      font-size: 14px;
-      box-shadow: 0 12px 24px rgba(109, 124, 255, 0.35);
-    }
-    .searchbar {
-      width: min(560px, 45vw);
-      display: flex;
-      align-items: center;
-      border: 1px solid #dfe4ff;
-      border-radius: 999px;
-      overflow: hidden;
-      background: rgba(255,255,255,0.95);
-      box-shadow: 0 8px 24px rgba(134, 147, 206, 0.12);
-    }
-    .searchbar input {
-      width: 100%;
-      border: 0;
-      padding: 14px 18px;
-      font-size: 15px;
-      outline: none;
-      color: #6b7391;
-      background: transparent;
-    }
-    .search-action {
-      width: 62px;
-      height: 50px;
-      border-left: 1px solid #e5e9ff;
-      background: #f7f8ff;
-      display: grid;
-      place-items: center;
-      color: var(--accent);
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: 210px minmax(0, 1fr);
-      gap: 28px;
-      padding: 24px;
-    }
-    aside {
-      position: sticky;
-      top: 98px;
-      align-self: start;
-      background: rgba(255,255,255,0.75);
-      border: 1px solid rgba(255,255,255,0.8);
-      box-shadow: var(--shadow);
-      border-radius: 26px;
-      padding: 20px 14px;
-      backdrop-filter: blur(12px);
-    }
-    .side-group {
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 16px;
-    }
-    .side-title {
-      font-size: 15px;
-      font-weight: 700;
-      margin: 0 0 10px;
-      padding: 0 12px;
-    }
-    .nav-item {
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      margin-bottom: 4px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .nav-item:hover {
-      background: var(--accent-soft);
-      color: var(--accent-deep);
-    }
-    .nav-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 10px;
-      background: var(--accent-soft);
-      color: var(--accent-deep);
-      display: grid;
-      place-items: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex: 0 0 auto;
-    }
-    main {
-      display: grid;
-      gap: 18px;
+    .shell {
+      min-height: 100vh;
     }
     .hero {
+      background: linear-gradient(135deg, #17212f 0%, #176c63 100%);
+      color: white;
+      padding: 30px 24px 86px;
+    }
+    .hero-inner, .content {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+    .topline {
       display: flex;
       justify-content: space-between;
-      gap: 20px;
       align-items: flex-start;
-      padding: 8px 6px 10px;
+      gap: 16px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
     }
-    .hero h1 {
-      margin: 0 0 10px;
-      font-size: 30px;
-      line-height: 1.2;
+    .brand {
+      font-size: 18px;
+      font-weight: 800;
     }
-    .hero p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.55;
-      max-width: 760px;
-    }
-    .links {
+    .quick-links {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-top: 16px;
+      justify-content: flex-end;
     }
-    .links a {
+    .quick-links a {
       text-decoration: none;
-      background: var(--panel);
-      color: var(--accent-deep);
-      border: 1px solid #dde3ff;
-      padding: 10px 14px;
-      border-radius: 999px;
-      box-shadow: 0 8px 18px rgba(121, 135, 200, 0.1);
-      font-size: 14px;
-      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 400;
     }
-    .hero-side {
-      min-width: 280px;
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border-radius: 24px;
-      padding: 16px;
-      border: 1px solid #edf0ff;
-      box-shadow: var(--shadow);
-    }
-    .hero-side h3 {
+    h1 {
       margin: 0 0 12px;
+      font-size: 40px;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.82);
+    }
+    .hero-tools {
+      display: grid;
+      gap: 12px;
+      justify-items: end;
+      min-width: 340px;
+      max-width: 520px;
+    }
+    .distribution-card {
+      width: 100%;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.24);
+      border-radius: 8px;
+      padding: 14px;
+      color: white;
+    }
+    .distribution-card h2 {
+      margin: 0 0 10px;
       font-size: 16px;
     }
-    .hero-side p {
-      margin: 0 0 10px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-    .chips {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding: 0 4px 8px;
-    }
-    .chip {
-      padding: 10px 14px;
-      border-radius: 10px;
-      background: #ffffff;
-      border: 1px solid #e7ebff;
-      white-space: nowrap;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-    }
-    .chip.active {
-      background: linear-gradient(135deg, var(--accent), #8ea0ff);
-      color: white;
-      border-color: transparent;
-      box-shadow: 0 12px 24px rgba(109, 124, 255, 0.28);
+    .content {
+      margin-top: -56px;
+      padding: 0 24px 44px;
     }
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
     }
-    .stat {
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border: 1px solid #edf0ff;
-      border-radius: 24px;
-      padding: 20px;
+    .stat-card, .panel, .claim-card {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.85);
+      border-radius: 8px;
       box-shadow: var(--shadow);
     }
-    .stat h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
+    .stat-card {
+      padding: 18px;
     }
-    .stat p {
-      margin: 0;
+    .stat-card span {
+      display: block;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .stat-card strong {
+      display: block;
+      font-size: 30px;
+      line-height: 1;
     }
     .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 18px;
+      display: block;
     }
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-    .badge.rejected { color: var(--reject); background: var(--reject-bg); }
-    .badge.allowed { color: var(--allow); background: var(--allow-bg); }
     .panel {
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border: 1px solid #edf0ff;
-      border-radius: 24px;
       padding: 20px;
-      box-shadow: var(--shadow);
-      min-width: 0;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 6px;
     }
     .panel h2 {
-      margin: 0 0 14px;
-      font-size: 17px;
+      margin: 0;
+      font-size: 20px;
     }
-    .chart-card {
-      min-height: 280px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .profit {
-      font-size: 28px;
+    .status-badge {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
       font-weight: 800;
-      margin: 4px 0 0;
-      color: var(--accent-deep);
+      white-space: nowrap;
     }
-    .chart-area {
-      height: 150px;
-      margin-top: 12px;
-      border-radius: 18px;
-      background:
-        linear-gradient(180deg, rgba(109,124,255,0.12), rgba(109,124,255,0.02)),
-        repeating-linear-gradient(to right, transparent 0, transparent 46px, rgba(213,219,255,0.65) 46px, rgba(213,219,255,0.65) 47px),
-        repeating-linear-gradient(to top, transparent 0, transparent 36px, rgba(232,235,247,0.85) 36px, rgba(232,235,247,0.85) 37px);
-      position: relative;
-      overflow: hidden;
+    .is-rejected { color: var(--reject); background: var(--reject-soft); }
+    .is-allowed { color: var(--allow); background: var(--allow-soft); }
+    .is-pending { color: var(--pending); background: var(--pending-soft); }
+    tr.is-rejected {
+      background: var(--reject-row);
+      border-left: 4px solid var(--reject);
     }
-    .chart-line {
-      position: absolute;
-      inset: 18px 16px 20px;
+    tr.is-allowed {
+      background: var(--allow-row);
+      border-left: 4px solid var(--allow);
     }
-    .chart-line svg {
-      width: 100%;
-      height: 100%;
+    tr.is-rejected td:first-child,
+    tr.is-rejected td:first-child a {
+      color: var(--reject);
     }
-    .mini-list {
+    tr.is-allowed td:first-child,
+    tr.is-allowed td:first-child a {
+      color: var(--allow);
+    }
+    tr.is-rejected .status-badge,
+    tr.is-allowed .status-badge {
+      color: white;
+    }
+    tr.is-rejected .status-badge {
+      background: var(--reject);
+    }
+    tr.is-allowed .status-badge {
+      background: var(--allow);
+    }
+    .chart {
       display: grid;
       gap: 12px;
+      margin-top: 8px;
     }
-    .mini-row {
+    .bar {
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #edf1f5;
       display: grid;
-      grid-template-columns: 28px 1fr auto;
-      gap: 10px;
-      align-items: center;
-      color: var(--muted);
-      font-size: 14px;
+      grid-template-columns: 67fr 33fr 0fr;
     }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 6px rgba(109,124,255,0.12);
-    }
-    .pie-card {
-      display: grid;
-      place-items: center;
-      min-height: 280px;
-    }
-    .pie {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      background: conic-gradient(#7a5cff 0 42%, #ffca63 42% 66%, #19c7c7 66% 81%, #57d68d 81% 92%, #cdd3f5 92% 100%);
-      position: relative;
-      margin: 10px auto 18px;
-      box-shadow: 0 16px 34px rgba(122, 92, 255, 0.18);
-    }
-    .pie::after {
-      content: "";
-      position: absolute;
-      inset: 42px;
-      background: white;
-      border-radius: 50%;
-    }
+    .bar span:nth-child(1) { background: var(--reject); }
+    .bar span:nth-child(2) { background: var(--allow); }
+    .bar span:nth-child(3) { background: #d6a536; }
     .legend {
-      width: 100%;
       display: grid;
-      gap: 10px;
-      font-size: 14px;
-      color: var(--muted);
+      gap: 7px;
+      color: rgba(255,255,255,0.78);
+      font-size: 13px;
     }
     .legend-row {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
     }
-    .legend-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 14px;
     }
-    .legend-swatch {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
+    .table-split-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
     }
-    .summary-card {
-      margin: 0;
-      background: linear-gradient(180deg, #ffffff, #f9faff);
-      border: 1px solid #edf0ff;
-      border-radius: 24px;
-      padding: 20px;
-      box-shadow: var(--shadow);
+    .table-block {
+      min-width: 0;
     }
-    .summary-card p {
-      margin: 0 0 8px;
+    .table-block h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
       color: var(--muted);
-      line-height: 1.55;
     }
-    .table-card table {
+    table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 640px;
       font-size: 14px;
     }
-    .table-card th, .table-card td {
+    th, td {
       padding: 12px 10px;
       border-bottom: 1px solid var(--line);
       text-align: left;
+      vertical-align: top;
     }
-    .table-card th {
+    th {
       color: var(--muted);
-      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
     }
-    .claim-grid {
+    td a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .claim-list {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
+      gap: 14px;
+      margin-top: 18px;
     }
     .claim-card {
-      background: linear-gradient(180deg, #ffffff, #fbfcff);
-      border: 1px solid #edf0ff;
-      border-radius: 22px;
       padding: 18px;
-      box-shadow: var(--shadow);
+      scroll-margin-top: 18px;
+      border-left: 5px solid transparent;
     }
-    .claim-card-top {
+    .claim-card.is-rejected {
+      border-left-color: var(--reject);
+    }
+    .claim-card.is-allowed {
+      border-left-color: var(--allow);
+    }
+    .claim-card.is-pending {
+      border-left-color: var(--pending);
+    }
+    .claim-card-head {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 14px;
+      align-items: flex-start;
       margin-bottom: 12px;
     }
-    .claim-chip {
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
+    .eyebrow {
+      display: inline-flex;
+      color: var(--accent);
       background: var(--accent-soft);
-      color: var(--accent-deep);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
       font-weight: 800;
+      margin-bottom: 9px;
+    }
+    .eyebrow.is-rejected {
+      color: white;
+      background: var(--reject);
+    }
+    .eyebrow.is-allowed {
+      color: white;
+      background: var(--allow);
+    }
+    .eyebrow.is-pending {
+      color: white;
+      background: var(--pending);
     }
     .claim-card h3 {
-      margin: 0 0 8px;
-      font-size: 19px;
-    }
-    .card-sub, .card-summary {
       margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 17px;
+      line-height: 1.45;
     }
-    .card-summary {
-      margin-top: 8px;
-      color: #4d5677;
+    .claim-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
     }
-    .detail-box {
-      margin-top: 14px;
-      background: #fafbff;
+    .claim-meta span {
       border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 12px 14px;
+      border-radius: 999px;
+      padding: 6px 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    details {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: 800;
+      list-style: none;
+    }
+    summary::-webkit-details-marker {
+      display: none;
     }
     .detail-grid {
       display: grid;
-      grid-template-columns: 1fr;
       gap: 12px;
       margin-top: 12px;
     }
     .detail-panel {
-      background: white;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 8px;
       padding: 14px;
+      background: #fbfdff;
+      color: var(--ink);
     }
     .detail-panel h4 {
       margin: 0 0 10px;
       font-size: 14px;
+      color: var(--ink);
     }
-    .cited-panel {
-      background: #f8fbff;
-    }
-    .cited-meta, .keyword-line {
-      margin: 0 0 8px;
+    .detail-panel p {
+      margin: 0 0 10px;
       color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .detail-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+    .detail-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .meta-grid div {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: white;
+    }
+    .meta-grid dt {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .meta-grid dd {
+      margin: 0;
       font-size: 13px;
       line-height: 1.5;
     }
     pre {
+      margin: 0;
+      padding: 12px;
       white-space: pre-wrap;
       word-break: keep-all;
-      background: #ffffff;
-      border: 1px solid #efefef;
-      border-radius: 14px;
-      padding: 12px;
-      font-family: "Consolas", monospace;
+      color: var(--ink);
+      background: white;
+      border: 1px solid #edf1f5;
+      border-radius: 8px;
+      font-family: Consolas, monospace;
       font-size: 12px;
-      line-height: 1.55;
+      line-height: 1.6;
     }
-    details summary {
-      cursor: pointer;
-      color: var(--accent-deep);
-      font-weight: 700;
-      list-style: none;
-    }
-    @media (max-width: 1280px) {
-      .dashboard-grid { grid-template-columns: 1fr 1fr; }
-      .claim-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 1024px) {
-      .layout { grid-template-columns: 1fr; }
-      aside { position: static; }
-      .stats { grid-template-columns: 1fr; }
-      .hero { flex-direction: column; }
-      .dashboard-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 720px) {
-      .topbar { padding: 0 14px; gap: 12px; }
-      .brand { font-size: 20px; }
-      .searchbar { width: 100%; }
-      .layout { padding: 14px; }
-      .claim-grid { grid-template-columns: 1fr; }
+    @media (max-width: 960px) {
+      .stats, .table-split-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 32px; }
+      .content { padding: 0 16px 34px; }
+      .hero { padding-left: 16px; padding-right: 16px; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .hero-tools {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        justify-items: stretch;
+      }
+      .quick-links {
+        justify-content: flex-start;
+      }
     }
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-badge">▣</span>
-      <span>Claim Analysis</span>
-    </div>
-    <div class="searchbar">
-      <input value="청구항 분석 현황" readonly>
-      <div class="search-action">⌕</div>
-    </div>
-    <div class="badge allowed">청구항 분석</div>
-  </header>
-
-  <div class="layout">
-    <aside>
-      <div class="side-group">
-        <div class="side-title">바로가기</div>
-        <a class="nav-item" href="청구항_분석_결과_20260412_201606.pdf"><span class="nav-icon">PDF</span><span>표시된 PDF</span></a>
-        <a class="nav-item" href="../../동희산업 배터리케이스(수원,18,청구당6).pdf"><span class="nav-icon">명</span><span>원본 명세서</span></a>
-        <a class="nav-item" href="../../5-20,동희산업, 의견제출, 진보성.pdf"><span class="nav-icon">의</span><span>원본 의견제출</span></a>
-        
-      </div>
-      <div class="side-group">
-        <div class="side-title">청구항 이동</div>
-        
-            <a class="nav-item" href="#claim-1">
-              <span class="nav-icon">1</span>
-              <span>청구항 1</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-2">
-              <span class="nav-icon">2</span>
-              <span>청구항 2</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-3">
-              <span class="nav-icon">3</span>
-              <span>청구항 3</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-4">
-              <span class="nav-icon">4</span>
-              <span>청구항 4</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-5">
-              <span class="nav-icon">5</span>
-              <span>청구항 5</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-6">
-              <span class="nav-icon">6</span>
-              <span>청구항 6</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-7">
-              <span class="nav-icon">7</span>
-              <span>청구항 7</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-8">
-              <span class="nav-icon">8</span>
-              <span>청구항 8</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-9">
-              <span class="nav-icon">9</span>
-              <span>청구항 9</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-10">
-              <span class="nav-icon">10</span>
-              <span>청구항 10</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-11">
-              <span class="nav-icon">11</span>
-              <span>청구항 11</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-12">
-              <span class="nav-icon">12</span>
-              <span>청구항 12</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-13">
-              <span class="nav-icon">13</span>
-              <span>청구항 13</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-14">
-              <span class="nav-icon">14</span>
-              <span>청구항 14</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-15">
-              <span class="nav-icon">15</span>
-              <span>청구항 15</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-16">
-              <span class="nav-icon">16</span>
-              <span>청구항 16</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-17">
-              <span class="nav-icon">17</span>
-              <span>청구항 17</span>
-            </a>
-            
-            <a class="nav-item" href="#claim-18">
-              <span class="nav-icon">18</span>
-              <span>청구항 18</span>
-            </a>
-            
-      </div>
-    </aside>
-
-    <main>
-      <section class="hero">
-        <div>
-          <h1>청구항 분석 대시보드</h1>
-          <p>의견제출통지서의 거절이유를 기준으로 명세서 청구항을 한 화면에서 관리할 수 있도록 요약 위젯, 상태표, 청구항 상세 카드로 재구성했습니다.</p>
-          <div class="links">
-            <a href="청구항_분석_결과_20260412_201606.pdf">분석 PDF 열기</a>
-            <a href="../../동희산업 배터리케이스(수원,18,청구당6).pdf">명세서 PDF</a>
-            <a href="../../5-20,동희산업, 의견제출, 진보성.pdf">의견제출 PDF</a>
-            
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="topline">
+          <div class="brand">거절이유 청구항 분석</div>
+          <div class="hero-tools">
+            <nav class="quick-links">
+              <a href="청구항_분석_결과.pdf">분석 PDF</a>
+              <a href="명세서.pdf">명세서</a>
+              <a href="의견제출통지서.pdf">의견제출통지서</a>
+              
+            </nav>
+            <aside class="distribution-card">
+              <h2>상태 분포</h2>
+              <div class="chart">
+                <div class="bar" aria-label="청구항 상태 분포">
+                  <span></span><span></span><span></span>
+                </div>
+                <div class="legend">
+                  <div class="legend-row"><span>거절이유</span><strong>12건 · 67%</strong></div>
+                  <div class="legend-row"><span>특허 가능</span><strong>6건 · 33%</strong></div>
+                  <div class="legend-row"><span>미분류</span><strong>0건 · 0%</strong></div>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
-        <section class="hero-side">
-          <h3>분석 요약</h3>
-          <p>거절이유 청구항: 1, 3, 4, 5, 9, 10, 11, 12, 13, 14, 16, 17</p>
-          <p>특허 가능 청구항: 2, 6, 7, 8, 15, 18</p>
-          <p>업로드된 인용발명 PDF: 없음</p>
-          <p>관련 법조항: 특허법 제29조제2항</p>
-        </section>
-      </section>
-
-      <div class="chips">
-        <div class="chip active">전체</div>
-        <div class="chip">진보성 거절</div>
-        <div class="chip">특허 가능</div>
-        <div class="chip">청구항 표</div>
-        <div class="chip">상세 카드</div>
+        <h1>거절이유 청구항 분석</h1>
+        <p>의견제출통지서의 청구항 상태와 거절이유를 기준으로, 청구항별 쟁점과 인용발명 대응 내용을 한 화면에서 검토할 수 있도록 정리했습니다.</p>
       </div>
+    </section>
 
-      <section class="stats">
-        <div class="stat"><h3>거절이유 청구항</h3><p>1, 3, 4, 5, 9, 10, 11, 12, 13, 14, 16, 17</p></div>
-        <div class="stat"><h3>특허 가능 청구항</h3><p>2, 6, 7, 8, 15, 18</p></div>
-        <div class="stat"><h3>관련 법조항</h3><p>특허법 제29조제2항</p></div>
+    <main class="content">
+      <section class="stats" aria-label="분석 요약">
+        <div class="stat-card"><span>전체 청구항</span><strong>18</strong></div>
+        <div class="stat-card"><span>거절이유</span><strong>12</strong></div>
+        <div class="stat-card"><span>특허 가능</span><strong>6</strong></div>
+        <div class="stat-card"><span>인용발명 PDF</span><strong>0</strong></div>
       </section>
 
       <section class="dashboard-grid">
-        <section class="panel chart-card">
-          <div>
-            <h2>청구항 처리 현황</h2>
-            <p class="profit">12 / 18 지적</p>
-          </div>
-          <div class="chart-area">
-            <div class="chart-line">
-              <svg viewBox="0 0 300 100" preserveAspectRatio="none" aria-hidden="true">
-                <path d="M0,78 C30,76 44,70 63,64 C84,57 102,70 121,54 C143,35 165,42 187,28 C214,12 238,22 260,18 C276,15 288,18 300,12" fill="none" stroke="#6d7cff" stroke-width="4" stroke-linecap="round"/>
-              </svg>
-            </div>
-          </div>
-        </section>
-
         <section class="panel">
-          <h2>핵심 포인트</h2>
-          <div class="mini-list">
-            <div class="mini-row"><span class="dot"></span><span>진보성 거절 중심</span><strong>12건</strong></div>
-            <div class="mini-row"><span class="dot" style="background:#23b98f; box-shadow:0 0 0 6px rgba(35,185,143,0.12)"></span><span>특허 가능 청구항</span><strong>6건</strong></div>
-            <div class="mini-row"><span class="dot" style="background:#ffb14a; box-shadow:0 0 0 6px rgba(255,177,74,0.12)"></span><span>검토 총 청구항</span><strong>18건</strong></div>
+          <div class="panel-head">
+            <h2>청구항 상태표</h2>
+            <span class="status-badge is-rejected">거절이유 12건</span>
           </div>
-        </section>
-
-        <section class="panel pie-card">
-          <div>
-            <h2>상태 비율</h2>
-            <div class="pie"></div>
-            <div class="legend">
-              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#7a5cff"></span>거절이유</span><span>12</span></div>
-              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#57d68d"></span>특허 가능</span><span>6</span></div>
-              <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#cdd3f5"></span>기타</span><span>0</span></div>
-            </div>
-          </div>
-        </section>
-      </section>
-
-      <section class="dashboard-grid">
-        <section class="panel table-card">
-          <h2>청구항 상태표</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>청구항</th>
-                <th>상태</th>
-                <th>페이지</th>
-                <th>인용발명</th>
-              </tr>
-            </thead>
-            <tbody>
-              
-            <tr>
-              <td>청구항 1</td>
-              <td><span class="badge rejected">거절이유</span></td>
+          <div class="table-split-grid">
+            
+            <section class="table-block">
+              <h3>청구항 1-10</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>청구항</th>
+                      <th>상태</th>
+                      <th>페이지</th>
+                      <th>인용발명</th>
+                      <th>요약</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    
+            <tr class="is-rejected">
+              <td><a href="#claim-1">청구항 1</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>19</td>
               <td>1, 4</td>
+              <td>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 2</td>
-              <td><span class="badge allowed">특허 가능</span></td>
+            <tr class="is-allowed">
+              <td><a href="#claim-2">청구항 2</a></td>
+              <td><span class="status-badge is-allowed">특허 가능</span></td>
               <td>19</td>
               <td>-</td>
+              <td>의견제출통지 시점 기준 특허 가능 청구항</td>
             </tr>
             
-            <tr>
-              <td>청구항 3</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-3">청구항 3</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>19</td>
               <td>1</td>
+              <td>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 4</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-4">청구항 4</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>19</td>
               <td>1</td>
+              <td>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 5</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-5">청구항 5</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>19</td>
               <td>1</td>
+              <td>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 6</td>
-              <td><span class="badge allowed">특허 가능</span></td>
+            <tr class="is-allowed">
+              <td><a href="#claim-6">청구항 6</a></td>
+              <td><span class="status-badge is-allowed">특허 가능</span></td>
               <td>20</td>
               <td>-</td>
+              <td>의견제출통지 시점 기준 특허 가능 청구항</td>
             </tr>
             
-            <tr>
-              <td>청구항 7</td>
-              <td><span class="badge allowed">특허 가능</span></td>
+            <tr class="is-allowed">
+              <td><a href="#claim-7">청구항 7</a></td>
+              <td><span class="status-badge is-allowed">특허 가능</span></td>
               <td>20</td>
               <td>-</td>
+              <td>의견제출통지 시점 기준 특허 가능 청구항</td>
             </tr>
             
-            <tr>
-              <td>청구항 8</td>
-              <td><span class="badge allowed">특허 가능</span></td>
+            <tr class="is-allowed">
+              <td><a href="#claim-8">청구항 8</a></td>
+              <td><span class="status-badge is-allowed">특허 가능</span></td>
               <td>20</td>
               <td>-</td>
+              <td>의견제출통지 시점 기준 특허 가능 청구항</td>
             </tr>
             
-            <tr>
-              <td>청구항 9</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-9">청구항 9</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>20</td>
               <td>1</td>
+              <td>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 10</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-10">청구항 10</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>20</td>
               <td>1, 3</td>
+              <td>인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 11</td>
-              <td><span class="badge rejected">거절이유</span></td>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            
+            <section class="table-block">
+              <h3>청구항 11-18</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>청구항</th>
+                      <th>상태</th>
+                      <th>페이지</th>
+                      <th>인용발명</th>
+                      <th>요약</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    
+            <tr class="is-rejected">
+              <td><a href="#claim-11">청구항 11</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>21</td>
               <td>1, 2</td>
+              <td>인용발명 1, 2의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 12</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-12">청구항 12</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>21</td>
               <td>1, 3</td>
+              <td>인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 13</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-13">청구항 13</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>21</td>
               <td>1, 3</td>
+              <td>인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 14</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-14">청구항 14</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>21</td>
               <td>1, 4</td>
+              <td>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 15</td>
-              <td><span class="badge allowed">특허 가능</span></td>
+            <tr class="is-allowed">
+              <td><a href="#claim-15">청구항 15</a></td>
+              <td><span class="status-badge is-allowed">특허 가능</span></td>
               <td>22</td>
               <td>-</td>
+              <td>의견제출통지 시점 기준 특허 가능 청구항</td>
             </tr>
             
-            <tr>
-              <td>청구항 16</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-16">청구항 16</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>22</td>
               <td>1, 4</td>
+              <td>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 17</td>
-              <td><span class="badge rejected">거절이유</span></td>
+            <tr class="is-rejected">
+              <td><a href="#claim-17">청구항 17</a></td>
+              <td><span class="status-badge is-rejected">거절이유</span></td>
               <td>22</td>
               <td>1, 4</td>
+              <td>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</td>
             </tr>
             
-            <tr>
-              <td>청구항 18</td>
-              <td><span class="badge allowed">특허 가능</span></td>
+            <tr class="is-allowed">
+              <td><a href="#claim-18">청구항 18</a></td>
+              <td><span class="status-badge is-allowed">특허 가능</span></td>
               <td>22</td>
               <td>-</td>
+              <td>의견제출통지 시점 기준 특허 가능 청구항</td>
             </tr>
             
-            </tbody>
-          </table>
-        </section>
-
-        <section class="summary-card">
-          <h2 style="margin:0 0 14px; font-size:17px;">표시 기준</h2>
-          <p>주황 배지는 의견제출통지서에서 진보성 거절이유가 지적된 청구항입니다.</p>
-          <p>초록 배지는 의견제출 시점 기준 특허 가능 청구항입니다.</p>
-          <p>아래 카드에서 각 청구항의 원문과 심사의견 전문을 확인할 수 있습니다.</p>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            
+          </div>
         </section>
       </section>
 
-      <section class="claim-grid">
+      <section class="claim-list" aria-label="청구항 상세">
         
-            <article class="claim-card" id="claim-1">
-              <div class="claim-card-top">
-                <div class="claim-chip">#1</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-1">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 1</span>
+                  <h3>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 1</h3>
-              <p class="card-sub">페이지 19 · 인용발명 1, 4</p>
-              <p class="card-summary">인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 19</span>
+                <span>인용발명 1, 4</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -885,20 +707,28 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>안착되며, 상하방향으로, 연장된, 체결볼트가, 관통되고, 관통되</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 4 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 4</h4>
+                    <span>미업로드 · 페이지 -</span>
+                  </div>
+                  <p>해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -906,15 +736,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-2">
-              <div class="claim-card-top">
-                <div class="claim-chip">#2</div>
-                <span class="badge allowed">특허 가능</span>
+            <article class="claim-card is-allowed" id="claim-2">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-allowed">청구항 2</span>
+                  <h3>의견제출통지 시점 기준 특허 가능 청구항</h3>
+                </div>
+                <span class="status-badge is-allowed">특허 가능</span>
               </div>
-              <h3>청구항 2</h3>
-              <p class="card-sub">페이지 19 · 인용발명 -</p>
-              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
-              <details class="detail-box" >
+              <div class="claim-meta">
+                <span>페이지 19</span>
+                <span>인용발명 -</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details >
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -933,15 +768,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-3">
-              <div class="claim-card-top">
-                <div class="claim-chip">#3</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-3">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 3</span>
+                  <h3>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 3</h3>
-              <p class="card-sub">페이지 19 · 인용발명 1</p>
-              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 19</span>
+                <span>인용발명 1</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -963,11 +803,15 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>1에, 체결파이프는, 체결파이프의, 하단에서, 외측, 둘레를</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -975,15 +819,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-4">
-              <div class="claim-card-top">
-                <div class="claim-chip">#4</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-4">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 4</span>
+                  <h3>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 4</h3>
-              <p class="card-sub">페이지 19 · 인용발명 1</p>
-              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 19</span>
+                <span>인용발명 1</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1010,11 +859,15 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>1에, 케이스로워판넬의, 폭방향, 길이방향을, 따라, 케이스로워판넬에</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1022,15 +875,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-5">
-              <div class="claim-card-top">
-                <div class="claim-chip">#5</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-5">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 5</span>
+                  <h3>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 5</h3>
-              <p class="card-sub">페이지 19 · 인용발명 1</p>
-              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 19</span>
+                <span>인용발명 1</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1053,11 +911,15 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>4에</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1065,15 +927,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-6">
-              <div class="claim-card-top">
-                <div class="claim-chip">#6</div>
-                <span class="badge allowed">특허 가능</span>
+            <article class="claim-card is-allowed" id="claim-6">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-allowed">청구항 6</span>
+                  <h3>의견제출통지 시점 기준 특허 가능 청구항</h3>
+                </div>
+                <span class="status-badge is-allowed">특허 가능</span>
               </div>
-              <h3>청구항 6</h3>
-              <p class="card-sub">페이지 20 · 인용발명 -</p>
-              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
-              <details class="detail-box" >
+              <div class="claim-meta">
+                <span>페이지 20</span>
+                <span>인용발명 -</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details >
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1092,15 +959,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-7">
-              <div class="claim-card-top">
-                <div class="claim-chip">#7</div>
-                <span class="badge allowed">특허 가능</span>
+            <article class="claim-card is-allowed" id="claim-7">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-allowed">청구항 7</span>
+                  <h3>의견제출통지 시점 기준 특허 가능 청구항</h3>
+                </div>
+                <span class="status-badge is-allowed">특허 가능</span>
               </div>
-              <h3>청구항 7</h3>
-              <p class="card-sub">페이지 20 · 인용발명 -</p>
-              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
-              <details class="detail-box" >
+              <div class="claim-meta">
+                <span>페이지 20</span>
+                <span>인용발명 -</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details >
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1121,15 +993,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-8">
-              <div class="claim-card-top">
-                <div class="claim-chip">#8</div>
-                <span class="badge allowed">특허 가능</span>
+            <article class="claim-card is-allowed" id="claim-8">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-allowed">청구항 8</span>
+                  <h3>의견제출통지 시점 기준 특허 가능 청구항</h3>
+                </div>
+                <span class="status-badge is-allowed">특허 가능</span>
               </div>
-              <h3>청구항 8</h3>
-              <p class="card-sub">페이지 20 · 인용발명 -</p>
-              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
-              <details class="detail-box" >
+              <div class="claim-meta">
+                <span>페이지 20</span>
+                <span>인용발명 -</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details >
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1148,15 +1025,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-9">
-              <div class="claim-card-top">
-                <div class="claim-chip">#9</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-9">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 9</span>
+                  <h3>인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 9</h3>
-              <p class="card-sub">페이지 20 · 인용발명 1</p>
-              <p class="card-summary">인용발명 1로부터 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 20</span>
+                <span>인용발명 1</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1178,11 +1060,15 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>1에, 체결파이프의, 내부에는, 중공을, 형성하는, 관통홀부가</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1190,15 +1076,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-10">
-              <div class="claim-card-top">
-                <div class="claim-chip">#10</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-10">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 10</span>
+                  <h3>인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 10</h3>
-              <p class="card-sub">페이지 20 · 인용발명 1, 3</p>
-              <p class="card-summary">인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 20</span>
+                <span>인용발명 1, 3</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1229,20 +1120,28 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 3 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 3</h4>
+                    <span>미업로드 · 페이지 -</span>
+                  </div>
+                  <p>해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1250,15 +1149,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-11">
-              <div class="claim-card-top">
-                <div class="claim-chip">#11</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-11">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 11</span>
+                  <h3>인용발명 1, 2의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 11</h3>
-              <p class="card-sub">페이지 21 · 인용발명 1, 2</p>
-              <p class="card-summary">인용발명 1, 2의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 21</span>
+                <span>인용발명 1, 2</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1287,36 +1191,53 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>10에, 케이스로워판넬에는, 체결부가, 형성된, 주변, 지점에서</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 2 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
-                  <pre>관련 본문을 찾지 못했습니다.</pre>
+                  <div class="detail-head">
+                    <h4>인용발명 2</h4>
+                    <span>업로드됨 · 페이지 5</span>
+                  </div>
+                  <p>인용발명 2에서 유사한 문단을 찾았지만 청구항 핵심어 10에, 케이스로워판넬에는, 체결부가, 주변, 지점에서, 상방으로는 직접 확인되지 않았습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>있어서, 형성된, 제1</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>10에, 케이스로워판넬에는, 체결부가, 주변, 지점에서, 상방으로</dd></div>
+                  </dl>
+                  <pre>청구항 13 
+제1항에 있어서,
+상기 제1 내부 돌출프레임부에는 차체에 상기 전기자동차용 배터리 케이스를 고정시키기 위한 마운팅 결합홀이
+형성되고, 상기 돌출플레이트부에는 마운팅 결합홀에 대향되어 마운팅 결합부가 형성된 것을 특징으로 하는 전
+기자동차용 배터리 케이스.</pre>
                 </section>
                 
                 </div>
               </details>
             </article>
             
-            <article class="claim-card" id="claim-12">
-              <div class="claim-card-top">
-                <div class="claim-chip">#12</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-12">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 12</span>
+                  <h3>인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 12</h3>
-              <p class="card-sub">페이지 21 · 인용발명 1, 3</p>
-              <p class="card-summary">인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 21</span>
+                <span>인용발명 1, 3</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1342,20 +1263,28 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>10에, 있어서, 냉각판넬의, 하면에, 케이스로워판넬, 냉각판넬을</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 3 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 3</h4>
+                    <span>미업로드 · 페이지 -</span>
+                  </div>
+                  <p>해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1363,15 +1292,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-13">
-              <div class="claim-card-top">
-                <div class="claim-chip">#13</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-13">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 13</span>
+                  <h3>인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 13</h3>
-              <p class="card-sub">페이지 21 · 인용발명 1, 3</p>
-              <p class="card-summary">인용발명 1, 3의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 21</span>
+                <span>인용발명 1, 3</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1395,20 +1329,28 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>12에, 컵와셔에는, 언더커버의, 외측에서, 상방으로, 절곡된</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 3 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 3</h4>
+                    <span>미업로드 · 페이지 -</span>
+                  </div>
+                  <p>해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1416,15 +1358,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-14">
-              <div class="claim-card-top">
-                <div class="claim-chip">#14</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-14">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 14</span>
+                  <h3>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 14</h3>
-              <p class="card-sub">페이지 21 · 인용발명 1, 4</p>
-              <p class="card-summary">인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 21</span>
+                <span>인용발명 1, 4</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1451,20 +1398,28 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 4 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 4</h4>
+                    <span>미업로드 · 페이지 -</span>
+                  </div>
+                  <p>해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1472,15 +1427,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-15">
-              <div class="claim-card-top">
-                <div class="claim-chip">#15</div>
-                <span class="badge allowed">특허 가능</span>
+            <article class="claim-card is-allowed" id="claim-15">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-allowed">청구항 15</span>
+                  <h3>의견제출통지 시점 기준 특허 가능 청구항</h3>
+                </div>
+                <span class="status-badge is-allowed">특허 가능</span>
               </div>
-              <h3>청구항 15</h3>
-              <p class="card-sub">페이지 22 · 인용발명 -</p>
-              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
-              <details class="detail-box" >
+              <div class="claim-meta">
+                <span>페이지 22</span>
+                <span>인용발명 -</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details >
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1501,15 +1461,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-16">
-              <div class="claim-card-top">
-                <div class="claim-chip">#16</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-16">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 16</span>
+                  <h3>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 16</h3>
-              <p class="card-sub">페이지 22 · 인용발명 1, 4</p>
-              <p class="card-summary">인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 22</span>
+                <span>인용발명 1, 4</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1543,20 +1508,28 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>14에, 케이스어퍼판넬에, 면착된, 체결파이프를, 고정하도록, 케이스어퍼판넬의</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 4 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 4</h4>
+                    <span>미업로드 · 페이지 -</span>
+                  </div>
+                  <p>해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1564,15 +1537,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-17">
-              <div class="claim-card-top">
-                <div class="claim-chip">#17</div>
-                <span class="badge rejected">거절이유</span>
+            <article class="claim-card is-rejected" id="claim-17">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-rejected">청구항 17</span>
+                  <h3>인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</h3>
+                </div>
+                <span class="status-badge is-rejected">거절이유</span>
               </div>
-              <h3>청구항 17</h3>
-              <p class="card-sub">페이지 22 · 인용발명 1, 4</p>
-              <p class="card-summary">인용발명 1, 4의 결합으로 통상의 기술자가 쉽게 발명 가능</p>
-              <details class="detail-box" open>
+              <div class="claim-meta">
+                <span>페이지 22</span>
+                <span>인용발명 1, 4</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details open>
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">
@@ -1601,20 +1579,28 @@
                   </section>
                   
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 1 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 1</h4>
+                    <span>업로드됨 · 페이지 -</span>
+                  </div>
+                  <p>인용발명 1 PDF에서 청구항과 직접 대응되는 문단을 찾지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>1에, 체결파이프의, 내부에는, 중공을, 형성하는, 관통홀부가</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
                 <section class="detail-panel cited-panel">
-                  <h4>인용발명 4 비교</h4>
-                  <p class="cited-meta">미업로드 · 페이지 -</p>
-                  <p class="card-summary">해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
-                  <p class="keyword-line"><strong>겹치는 키워드</strong> -</p>
-                  <p class="keyword-line"><strong>추가 확인 필요</strong> -</p>
+                  <div class="detail-head">
+                    <h4>인용발명 4</h4>
+                    <span>미업로드 · 페이지 -</span>
+                  </div>
+                  <p>해당 인용발명 PDF가 업로드되지 않아 원문 비교를 하지 못했습니다.</p>
+                  <dl class="meta-grid">
+                    <div><dt>겹치는 키워드</dt><dd>-</dd></div>
+                    <div><dt>추가 확인 필요</dt><dd>-</dd></div>
+                  </dl>
                   <pre>관련 본문을 찾지 못했습니다.</pre>
                 </section>
                 
@@ -1622,15 +1608,20 @@
               </details>
             </article>
             
-            <article class="claim-card" id="claim-18">
-              <div class="claim-card-top">
-                <div class="claim-chip">#18</div>
-                <span class="badge allowed">특허 가능</span>
+            <article class="claim-card is-allowed" id="claim-18">
+              <div class="claim-card-head">
+                <div>
+                  <span class="eyebrow is-allowed">청구항 18</span>
+                  <h3>의견제출통지 시점 기준 특허 가능 청구항</h3>
+                </div>
+                <span class="status-badge is-allowed">특허 가능</span>
               </div>
-              <h3>청구항 18</h3>
-              <p class="card-sub">페이지 22 · 인용발명 -</p>
-              <p class="card-summary">의견제출통지 시점 기준 특허 가능 청구항</p>
-              <details class="detail-box" >
+              <div class="claim-meta">
+                <span>페이지 22</span>
+                <span>인용발명 -</span>
+                <span>특허법 제29조 제2항</span>
+              </div>
+              <details >
                 <summary>상세 보기</summary>
                 <div class="detail-grid">
                   <section class="detail-panel">

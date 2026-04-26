@@ -330,30 +330,36 @@ def render_result_page(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>청구항 분석 결과</title>
+  <title>거절이유 청구항 분석</title>
   <style>
     :root {{
-      --bg: #eef3f8;
+      --bg: #f3f6fa;
       --panel: #ffffff;
-      --ink: #1d3557;
-      --muted: #61758a;
-      --line: #d7e2ec;
-      --accent: #126c5e;
-      --accent-deep: #0d564c;
-      --accent-soft: #e9faf6;
-      --shadow: 0 18px 40px rgba(29, 53, 87, 0.10);
+      --ink: #1f2a37;
+      --muted: #697586;
+      --line: #dde5ee;
+      --accent: #176c63;
+      --accent-deep: #11524c;
+      --accent-soft: #e8f6f3;
+      --reject: #c2413f;
+      --reject-soft: #fff0f0;
+      --shadow: 0 18px 42px rgba(31, 42, 55, 0.10);
     }}
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
       font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
       color: var(--ink);
-      background: linear-gradient(180deg, #edf6ff, var(--bg));
+      background: var(--bg);
     }}
-    .page {{
-      max-width: 1280px;
+    .hero {{
+      background: linear-gradient(135deg, #17212f 0%, #176c63 100%);
+      color: white;
+      padding: 28px 20px 82px;
+    }}
+    .hero-inner, .page {{
+      max-width: 1320px;
       margin: 0 auto;
-      padding: 24px 16px 40px;
     }}
     .topbar {{
       display: flex;
@@ -361,15 +367,22 @@ def render_result_page(
       gap: 16px;
       align-items: center;
       flex-wrap: wrap;
-      margin-bottom: 18px;
+      margin-bottom: 26px;
+    }}
+    .brand {{
+      font-size: 18px;
+      font-weight: 800;
     }}
     h1 {{
       margin: 0;
-      font-size: 30px;
+      font-size: 38px;
+      line-height: 1.16;
     }}
     .muted {{
-      color: var(--muted);
-      margin-top: 6px;
+      color: rgba(255,255,255,0.82);
+      margin-top: 10px;
+      line-height: 1.7;
+      max-width: 720px;
     }}
     .button-row {{
       display: flex;
@@ -387,25 +400,63 @@ def render_result_page(
       justify-content: center;
     }}
     .button {{
-      background: var(--accent);
-      color: white;
+      background: white;
+      color: var(--accent-deep);
     }}
     .button:hover {{
-      background: var(--accent-deep);
+      background: #f1f5f9;
     }}
     .button-secondary {{
-      background: var(--accent-soft);
-      color: var(--accent-deep);
+      background: rgba(255,255,255,0.12);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.28);
+    }}
+    .page {{
+      padding: 0 16px 40px;
+      margin-top: -54px;
+    }}
+    .summary-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }}
+    .summary-card {{
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.85);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }}
+    .summary-card span {{
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }}
+    .summary-card strong {{
+      display: block;
+      font-size: 20px;
+      line-height: 1.35;
+      word-break: keep-all;
+    }}
+    .summary-card.accent {{
+      background: var(--reject-soft);
+      border-color: rgba(194,65,63,0.14);
+    }}
+    .summary-card.accent strong {{
+      color: var(--reject);
     }}
     .grid {{
       display: grid;
-      grid-template-columns: 320px 1fr;
+      grid-template-columns: 300px 1fr;
       gap: 16px;
     }}
     .panel {{
       background: var(--panel);
       border: 1px solid rgba(255,255,255,0.9);
-      border-radius: 22px;
+      border-radius: 8px;
       box-shadow: var(--shadow);
     }}
     .sidebar {{
@@ -424,18 +475,32 @@ def render_result_page(
       color: var(--muted);
     }}
     .viewer {{
-      padding: 12px;
+      padding: 10px;
     }}
     iframe {{
       width: 100%;
       min-height: 82vh;
       border: 0;
-      border-radius: 16px;
+      border-radius: 6px;
       background: white;
     }}
+    .side-link {{
+      display: flex;
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      color: var(--accent-deep);
+      background: var(--accent-soft);
+      font-weight: 800;
+      justify-content: center;
+    }}
     @media (max-width: 960px) {{
-      .grid {{
+      .grid, .summary-grid {{
         grid-template-columns: 1fr;
+      }}
+      h1 {{
+        font-size: 30px;
       }}
       iframe {{
         min-height: 70vh;
@@ -444,34 +509,51 @@ def render_result_page(
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="topbar">
-      <div>
-        <h1>청구항 분석 결과가 준비되었습니다.</h1>
-        <div class="muted">브라우저에서 결과 HTML을 바로 확인하고, PDF와 JSON 또는 ZIP 파일로 내려받을 수 있습니다.</div>
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="topbar">
+        <div class="brand">거절이유 청구항 분석</div>
+        <div class="button-row">
+          <a class="button" href="{zip_link}" download="claim-analysis-results.zip">결과 ZIP 다운로드</a>
+          <a class="button-secondary" href="{pdf_link}" download="{html.escape(pdf_name)}">분석 PDF 다운로드</a>
+          <a class="button-secondary" href="{json_link}" download="claim_mapping.json">JSON 다운로드</a>
+          <a class="button-secondary" href="/">새 분석 실행</a>
+        </div>
       </div>
-      <div class="button-row">
-        <a class="button" href="{zip_link}" download="claim-analysis-results.zip">결과 ZIP 다운로드</a>
-        <a class="button-secondary" href="{pdf_link}" download="{html.escape(pdf_name)}">분석 PDF 다운로드</a>
-        <a class="button-secondary" href="{json_link}" download="claim_mapping.json">JSON 다운로드</a>
-        <a class="button-secondary" href="/">새 분석 실행</a>
-      </div>
+      <h1>거절이유 청구항 분석 결과</h1>
+      <div class="muted">분석 결과를 대시보드 형태로 확인하고, 필요한 산출물을 바로 내려받을 수 있습니다.</div>
     </div>
+  </section>
+
+  <div class="page">
+    <section class="summary-grid">
+      <div class="summary-card accent">
+        <span>분석 상태</span>
+        <strong>결과 생성 완료</strong>
+      </div>
+      <div class="summary-card">
+        <span>분석 PDF</span>
+        <strong>{html.escape(pdf_name)}</strong>
+      </div>
+      <div class="summary-card">
+        <span>산출물</span>
+        <strong>PDF · HTML · JSON · ZIP</strong>
+      </div>
+    </section>
 
     <div class="grid">
       <aside class="panel sidebar">
         <section>
-          <h2>다운로드 파일</h2>
-          <p>분석 PDF, JSON, 그리고 전체 결과 ZIP을 바로 받을 수 있습니다.</p>
+          <h2>다운로드</h2>
+          <p>분석 PDF, JSON, 전체 ZIP을 바로 받을 수 있습니다.</p>
         </section>
-        <section>
-          <h3>분석 PDF</h3>
-          <p>{html.escape(pdf_name)}</p>
-        </section>
+        <a class="side-link" href="{pdf_link}" download="{html.escape(pdf_name)}">분석 PDF</a>
+        <a class="side-link" href="{json_link}" download="claim_mapping.json">JSON</a>
+        <a class="side-link" href="{zip_link}" download="claim-analysis-results.zip">전체 ZIP</a>
       </aside>
 
       <section class="panel viewer">
-        <iframe title="청구항 분석 결과" srcdoc="{iframe_doc}"></iframe>
+        <iframe title="거절이유 청구항 분석" srcdoc="{iframe_doc}"></iframe>
       </section>
     </div>
   </div>
